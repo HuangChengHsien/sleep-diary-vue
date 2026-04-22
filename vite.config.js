@@ -12,9 +12,8 @@ export default defineConfig({
     // --- PWA 設定 ---
     VitePWA({
       registerType: 'autoUpdate',
-      // 開發模式下也啟用 PWA，方便即時測試
       devOptions: {
-        enabled: true,
+        enabled: false,
       },
       // Manifest 檔案設定
       manifest: {
