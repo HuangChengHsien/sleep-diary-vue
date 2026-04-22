@@ -1,35 +1,60 @@
-# sleep-diary-vue
+# 睡眠日記 Sleep Diary
 
-This template should help get you started developing with Vue 3 in Vite.
+一個為兒童與家長設計的睡眠紀錄工具，協助持續追蹤作息、入睡時間、夜醒狀況與睡眠品質，讓回診時能提供醫師客觀的資料參考。
 
-## Recommended IDE Setup
+**線上使用：** <https://sleep-diary-rust.vercel.app>
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+## 關於這個工具
 
-## Customize configuration
+兒童的睡眠問題通常需要觀察一到兩週才能看出穩定的作息模式。門診時間有限，家長也難以憑記憶完整回溯細節。這個工具的目的是讓紀錄這件事變得輕鬆——每天只需要花幾十秒填寫，就能累積具參考價值的作息資料，在回診時與醫師討論。
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+## 隱私與資料儲存
 
-## Project Setup
+**所有紀錄僅儲存於你自己裝置的瀏覽器（localStorage）。**
 
-```sh
+- 資料不會上傳到任何伺服器
+- 沒有帳號、沒有登入、不蒐集任何個人資訊
+- 清除瀏覽器資料會讓紀錄消失，建議定期備份
+
+## 使用方式
+
+在手機或電腦的瀏覽器開啟網站即可開始使用。建議用手機「加入主畫面」作為 PWA 使用，支援離線操作，使用體驗接近原生 App：
+
+- **iPhone / iPad**：Safari 打開網站 → 分享按鈕 → 加入主畫面
+- **Android**：Chrome 打開網站 → 選單 → 安裝應用程式
+
+## 開發資訊
+
+### 技術棧
+
+- Vue 3
+- Vite
+- Vue Router
+- vite-plugin-pwa（僅 production build 啟用 Service Worker）
+- 部署：Vercel，`main` 分支自動部署
+
+### 本機開發
+
+```bash
 npm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
 npm run dev
 ```
 
-### Compile and Minify for Production
+### Production 建置與預覽
 
-```sh
+```bash
 npm run build
+npm run preview
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+## 作者
 
-```sh
-npm run lint
-```
+**黃正憲醫師**
+兒童神經科、睡眠醫學專科醫師
+臺北市立聯合醫院陽明院區
+
+延伸閱讀：[kidnsleep.com](https://kidnsleep.com) — 兒童睡眠衛教部落格
+
+## 免責聲明
+
+本工具僅供個人記錄與衛教參考，不能取代專業醫療諮詢、診斷或治療。如有睡眠相關疑慮，請尋求具兒童睡眠醫學訓練的專科醫師協助。
