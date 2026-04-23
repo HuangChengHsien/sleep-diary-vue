@@ -28,25 +28,26 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            // 圖示路徑是相對於 public 資料夾的
-            // 請確認 public 資料夾下有這個檔案
-            src: 'pwa-192x192.png',
+            src: 'icon-192x192.png',
             sizes: '192x192',
             type: 'image/png',
           },
           {
-            // 請確認 public 資料夾下有這個檔案
-            src: 'pwa-512x512.png',
+            src: 'icon-512x512.png',
             sizes: '512x512',
             type: 'image/png',
           },
           {
-            // Maskable icon，讓圖示在 Android 上顯示得更好看
-            // 請確認 public 資料夾下有這個檔案
-            src: 'maskable-icon-512x512.png',
+            src: 'maskable-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+          {
+            src: 'maskable-512x512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable',
+            purpose: 'maskable',
           },
         ],
       },
