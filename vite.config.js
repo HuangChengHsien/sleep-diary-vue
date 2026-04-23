@@ -18,7 +18,7 @@ export default defineConfig({
       // Manifest 檔案設定
       manifest: {
         // 請根據您的應用程式修改以下資訊
-        name: '兒童青少年睡眠健康平台',
+        name: '睡眠日誌',
         short_name: '睡眠日誌',
         description: '記錄與分析兒童青少年睡眠品質，資料完全儲存於本機裝置。',
         theme_color: '#0A1020',
