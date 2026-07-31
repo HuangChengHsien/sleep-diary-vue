@@ -40,6 +40,22 @@
         </div>
       </div>
 
+      <!-- 列印專用。螢幕上這些資訊在 nav-header，但 nav-header 在列印時被隱藏，
+           結果印出來的報告沒有個案姓名，也看不出是哪個版本算的。 -->
+      <div class="print-header">
+        <h1>睡眠日記 · 數據分析報告</h1>
+        <dl>
+          <div><dt>個案</dt><dd>{{ printBabyLabel }}</dd></div>
+          <div><dt>統計期間</dt><dd>{{ filteredStatistics.dateRange }}</dd></div>
+          <div><dt>顯示範圍</dt><dd>{{ getFilterDisplayText() }}</dd></div>
+          <div><dt>列印日期</dt><dd>{{ printedOn }}</dd></div>
+          <div><dt>程式版本</dt><dd>{{ buildDate }}</dd></div>
+        </dl>
+        <p class="print-header-note">
+          統計方式可能隨版本調整。若需比對不同時間列印的報告，請以「程式版本」為準。
+        </p>
+      </div>
+
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-value">{{ filteredStatistics.totalRecords }}</div>
@@ -486,6 +502,23 @@ const filteredStatistics = computed(() => {
   return calculateSleepStatistics(filteredSleepRecords.value, babyData)
 })
 
+// ── 報告戳記 ──────────────────────────────────────
+// 統計算法會隨版本改變，同一份資料在不同版本印出的數字可能不同。
+// 報告會離開這個系統被拿去門診討論，所以必須自己說明是哪個版本算的。
+const buildDate = import.meta.env.VITE_BUILD_DATE || '開發版本'
+
+const printedOn = ref(new Date().toLocaleDateString('zh-TW'))
+const stampPrintDate = () => {
+  printedOn.value = new Date().toLocaleDateString('zh-TW')
+}
+
+const printBabyLabel = computed(() => {
+  const baby = currentBaby.value
+  if (!baby) return '—'
+  const entry = babyList.value.find((b) => b.id === currentBabyId.value)
+  return entry?.age ? `${baby.name}（${entry.age}）` : baby.name
+})
+
 // 提示文案裡的「超過 N 小時」，與 chart-calc 判定用的門檻同源
 const extremeLatencyHours = Math.round(MAX_PLAUSIBLE_LATENCY_MINUTES / 60)
 
@@ -767,7 +800,9 @@ const downloadChart = () => {
   }
 }
 
-const printReport = () => {
+const printReport = async () => {
+  stampPrintDate()
+  await nextTick() // 讓戳記先進 DOM，再開列印對話框
   window.print()
 }
 
@@ -819,6 +854,9 @@ watch(
 
 // 生命周期
 onMounted(async () => {
+  // 使用者也可能直接用瀏覽器列印（Ctrl+P），不經過我們的按鈕
+  window.addEventListener('beforeprint', stampPrintDate)
+
   try {
     // 載入用戶的篩選偏好
     const savedFilter = localStorage.getItem('sleepAnalysis_chartFilter')
@@ -869,6 +907,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   destroyChart()
+  window.removeEventListener('beforeprint', stampPrintDate)
 })
 </script>
 
@@ -1308,8 +1347,45 @@ canvas {
 #weeklyCanvas        { height: 400px !important; }
 /* #timelineCanvas 高度由 useChartAnalysis 動態注入 <style> 控制 */
 
+/* 列印專用表頭：螢幕上不顯示 */
+.print-header { display: none; }
+
 /* ── Print ────────────────────────────────────────── */
 @media print {
+  .print-header {
+    display: block;
+    margin: 0 0 16px;
+    padding: 0 0 12px;
+    border-bottom: 2px solid #333;
+    color: #111 !important;
+  }
+
+  .print-header h1 {
+    font-size: 18px; font-weight: 600;
+    margin: 0 0 10px; color: #111 !important;
+  }
+
+  .print-header dl {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px 24px;
+    margin: 0;
+  }
+
+  .print-header dl > div { display: flex; gap: 8px; font-size: 12px; }
+
+  .print-header dt {
+    color: #666 !important;
+    min-width: 5em;
+  }
+
+  .print-header dd { margin: 0; color: #111 !important; font-weight: 500; }
+
+  .print-header-note {
+    margin: 10px 0 0;
+    font-size: 10px; color: #666 !important;
+  }
+
   .analysis-container,
   .main-content {
     background: #ffffff !important;

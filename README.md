@@ -34,6 +34,11 @@
 - vite-plugin-pwa（僅 production build 啟用 Service Worker）
 - 部署：Vercel，`main` 分支自動部署
 
+### 變更紀錄
+
+會影響顯示數字或數據判讀方式的變更記錄在 [CHANGELOG.md](CHANGELOG.md)。
+純重構與內部整理不列入，請看 git 紀錄。
+
 ### 本機開發
 
 ```bash
