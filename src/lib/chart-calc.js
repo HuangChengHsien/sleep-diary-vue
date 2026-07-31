@@ -64,6 +64,7 @@ export const calculateSleepStatistics = (sleepData, baby) => {
       avgDailySleep: '0.0',
       avgSleepLatency: 0,
       extremeLatencyNights: 0,
+      recordsExcludedFromNightStats: 0,
       avgNightBedtime: '--:--',
       avgSleepOnset: '--:--',
       avgWakeUpTime: '--:--',
@@ -87,6 +88,7 @@ export const calculateSleepStatistics = (sleepData, baby) => {
       avgDailySleep: '0.0',
       avgSleepLatency: 0,
       extremeLatencyNights: 0,
+      recordsExcludedFromNightStats: 0,
       avgNightBedtime: '--:--',
       avgSleepOnset: '--:--',
       avgWakeUpTime: '--:--',
@@ -130,6 +132,20 @@ export const calculateSleepStatistics = (sleepData, baby) => {
     }
   })
 
+  // 上面用「上床時間」判定日/夜，落在 09:00–18:00 的整筆當午睡排除。
+  // 絕大多數情況正確，但如果上床判為白天、入睡卻在夜晚，那顯然不是午睡 ——
+  // 午睡不會睡到隔天早上八點。多半是輸入上床時間時上下午選錯。
+  //
+  // 這種紀錄整晚不計入夜晚統計，而且原本沒有任何跡象。這裡不動判定規則
+  //（改判定會牽動所有紀錄的日/夜分類），只把筆數報出來交給畫面揭露。
+  const recordsExcludedFromNightStats = records.filter((r) => {
+    if (!r.bedTime) return false
+    const bedHour = r.bedTime.getHours()
+    if (bedHour < 9 || bedHour >= 18) return false // 本來就算夜晚，沒被排除
+    const sleepHour = r.sleepTime.getHours()
+    return sleepHour >= 18 || sleepHour < 9
+  }).length
+
   const nightsArray = Object.values(logicalNights)
   if (nightsArray.length === 0) {
     return {
@@ -137,6 +153,7 @@ export const calculateSleepStatistics = (sleepData, baby) => {
       avgDailySleep: avgDailySleep.toFixed(1),
       avgSleepLatency: 0,
       extremeLatencyNights: 0,
+      recordsExcludedFromNightStats,
       avgNightBedtime: '--:--',
       avgSleepOnset: '--:--',
       avgWakeUpTime: '--:--',
@@ -189,6 +206,7 @@ export const calculateSleepStatistics = (sleepData, baby) => {
     avgDailySleep: avgDailySleep.toFixed(1),
     avgSleepLatency: avgSleepLatency >= 0 ? avgSleepLatency : 0,
     extremeLatencyNights,
+    recordsExcludedFromNightStats,
     avgNightBedtime,
     avgSleepOnset,
     avgWakeUpTime,
