@@ -82,6 +82,12 @@
         </div>
       </div>
 
+      <div v-if="filteredStatistics.recordsExcludedFromNightStats > 0" class="stats-notice">
+        ⚠️ 有 {{ filteredStatistics.recordsExcludedFromNightStats }} 筆記錄的上床時間落在白天
+        (09:00–18:00) 但入睡時間在夜晚，因此未計入上方四項夜晚統計。
+        常見原因是輸入上床時間時上下午選錯，可到日誌頁面確認該筆記錄。
+      </div>
+
       <div class="legend-container">
         <h3>📊 指標邊框顏色說明</h3>
         <p class="legend-intro">卡片左側邊框顏色代表該數據與同齡兒童青少年參考值的比較結果：</p>
@@ -967,6 +973,18 @@ onUnmounted(() => {
   border-radius: 6px;
 }
 
+/* 影響多張卡片的資料揭露；配色沿用單張卡片的 .stat-caveat，
+   版面對齊沿用 .legend-container（max-width 1200 + 20px 內距） */
+.stats-notice {
+  max-width: 1200px; margin: 12px auto 0;
+  padding: 12px 20px;
+  font-size: 12px; line-height: 1.7;
+  color: #D4B36A;
+  background: rgba(212,179,106,0.08);
+  border: 1px solid rgba(212,179,106,0.18);
+  border-radius: 14px;
+}
+
 /* ── Legend ───────────────────────────────────────── */
 .legend-container {
   max-width: 1200px; margin: 16px auto 0;
@@ -1256,6 +1274,7 @@ canvas {
   .stat-subtitle { color: #666 !important; }
 
   /* 列印給醫師看的報告，資料可信度的提醒必須跟著印出來 */
+  .stats-notice,
   .stat-caveat {
     color: #8a6d1f !important;
     background: #fdf6e3 !important;
@@ -1316,6 +1335,7 @@ canvas {
   .nav-controls { padding: 10px 14px; }
   .control-row { flex-direction: column; }
   .control-group { min-width: 100%; }
+  .stats-notice,
   .legend-container,
   .daily-list-container,
   .control-panel,

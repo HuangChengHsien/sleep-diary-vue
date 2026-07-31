@@ -333,10 +333,10 @@ describe('calculateSleepStatistics', () => {
     expect(stats.extremeLatencyNights).toBe(1)
   })
 
-  it('釘住現況：上床時間落在白天的紀錄整晚不計入夜晚統計', () => {
+  it('上床時間落在白天的紀錄整晚不計入夜晚統計，但會被計數揭露', () => {
     // 上下午選錯造成 bedHour=12，落在 [9,18) 白天排除區間。
-    // 這一晚完全不進夜晚統計，也因此不會被 extremeLatencyNights 標記出來。
-    // 這是已知缺口（白天排除本身沒有任何揭露），尚未處理；先釘住行為避免無聲改變。
+    // 這一晚不進夜晚統計（判定規則刻意保持不變），但入睡時間在夜晚，
+    // 顯然不是午睡 → 計入 recordsExcludedFromNightStats 讓畫面提示。
     const records = [
       {
         bedTimestamp:   '2026-01-14T12:55:00',
@@ -349,6 +349,63 @@ describe('calculateSleepStatistics', () => {
     expect(stats.avgSleepLatency).toBe(0)
     expect(stats.extremeLatencyNights).toBe(0)
     expect(stats.avgNightBedtime).toBe('--:--')
+    expect(stats.recordsExcludedFromNightStats).toBe(1)
+  })
+
+  it('真正的午睡不會被計入 recordsExcludedFromNightStats', () => {
+    // 上床與入睡都在白天 → 就是午睡，本來就該排除，不需要提醒
+    const records = [
+      {
+        bedTimestamp:   '2026-01-15T13:00:00',
+        sleepTimestamp: '2026-01-15T13:20:00',
+        wakeTimestamp:  '2026-01-15T15:00:00',
+      },
+    ]
+    expect(calculateSleepStatistics(records).recordsExcludedFromNightStats).toBe(0)
+  })
+
+  it('正常夜間紀錄不會被計入（根本沒進白天排除分支）', () => {
+    const records = [
+      {
+        bedTimestamp:   '2026-01-14T21:45:00',
+        sleepTimestamp: '2026-01-14T22:00:00',
+        wakeTimestamp:  '2026-01-15T06:00:00',
+      },
+    ]
+    expect(calculateSleepStatistics(records).recordsExcludedFromNightStats).toBe(0)
+  })
+
+  it('正常夜晚與異常紀錄並存時，夜晚統計照算，異常另外計數', () => {
+    const records = [
+      // 正常夜晚
+      {
+        bedTimestamp:   '2026-01-13T21:45:00',
+        sleepTimestamp: '2026-01-13T22:00:00',
+        wakeTimestamp:  '2026-01-14T06:00:00',
+      },
+      // 午睡，不該提醒
+      {
+        bedTimestamp:   '2026-01-14T13:00:00',
+        sleepTimestamp: '2026-01-14T13:20:00',
+        wakeTimestamp:  '2026-01-14T15:00:00',
+      },
+      // 上床白天但入睡夜晚 → 提醒
+      {
+        bedTimestamp:   '2026-01-14T12:55:00',
+        sleepTimestamp: '2026-01-15T00:44:00',
+        wakeTimestamp:  '2026-01-15T07:56:00',
+      },
+    ]
+    const stats = calculateSleepStatistics(records)
+    expect(stats.avgNightBedtime).toBe('21:45') // 正常那晚仍被統計
+    expect(stats.recordsExcludedFromNightStats).toBe(1)
+  })
+
+  it('沒有上床時間的紀錄不算異常（只是沒填，不是矛盾）', () => {
+    const records = [
+      { sleepTimestamp: '2026-01-14T22:00:00', wakeTimestamp: '2026-01-15T06:00:00' },
+    ]
+    expect(calculateSleepStatistics(records).recordsExcludedFromNightStats).toBe(0)
   })
 
   it('全部正常時 extremeLatencyNights 為 0', () => {
