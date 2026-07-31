@@ -5,7 +5,6 @@ import { Chart } from './chart-setup.js'
 import { chartManager } from './chart-manager.js'
 import { drawNoDataMessage } from './no-data.js'
 import { normalizeTimestamp, getLocalDateString } from '@/lib/chart-calc.js'
-import { MAX_PLAUSIBLE_LATENCY_MINUTES } from '@/lib/sleep-record-input.js'
 
 export const renderTimelineChart = (sleepData, eventData, showEvents, showSleep) => {
   const canvas = document.getElementById('timelineCanvas')
@@ -72,28 +71,29 @@ export const renderTimelineChart = (sleepData, eventData, showEvents, showSleep)
           })
         }
       }
+      // 入睡準備區段一律畫出，不論長短。花三小時才睡著正是最該被看見的事，
+      // 而異常到不像真的（例如上下午選錯造成的 11 小時）也應該在圖上刺眼，
+      // 不該被靜默隱藏 —— 兩種情況都要讓看圖的人自己判斷。
       if (bedTime && sleepStart && sleepStart > bedTime) {
         const bedTimeDateStr = getLocalDateString(bedTime)
         const sleepStartDateStr = getLocalDateString(sleepStart)
-        if ((sleepStart - bedTime) / 60000 < MAX_PLAUSIBLE_LATENCY_MINUTES) {
-          if (bedTimeDateStr !== sleepStartDateStr) {
-            processedSleepData.push({
-              x: [timeToHours(bedTime), 24],
-              y: bedTimeDateStr,
-              type: 'latency',
-            })
-            processedSleepData.push({
-              x: [0, timeToHours(sleepStart)],
-              y: sleepStartDateStr,
-              type: 'latency',
-            })
-          } else {
-            processedSleepData.push({
-              x: [timeToHours(bedTime), timeToHours(sleepStart)],
-              y: bedTimeDateStr,
-              type: 'latency',
-            })
-          }
+        if (bedTimeDateStr !== sleepStartDateStr) {
+          processedSleepData.push({
+            x: [timeToHours(bedTime), 24],
+            y: bedTimeDateStr,
+            type: 'latency',
+          })
+          processedSleepData.push({
+            x: [0, timeToHours(sleepStart)],
+            y: sleepStartDateStr,
+            type: 'latency',
+          })
+        } else {
+          processedSleepData.push({
+            x: [timeToHours(bedTime), timeToHours(sleepStart)],
+            y: bedTimeDateStr,
+            type: 'latency',
+          })
         }
       }
     })
