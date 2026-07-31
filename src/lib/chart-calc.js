@@ -5,7 +5,7 @@ import {
   getLatencyRating,
   getTotalSleepRating,
   getSleepOnsetRating,
-} from '@/composables/sleep-references.js'
+} from './sleep-references.js'
 
 // ── 基本工具 ──────────────────────────────────────
 

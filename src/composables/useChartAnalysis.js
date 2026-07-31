@@ -28,7 +28,7 @@ import {
   getLatencyChartBands,
   getTotalSleepReferenceForAge,
   getTotalSleepRating,
-} from './sleep-references.js'
+} from '@/lib/sleep-references.js'
 import { DARK_THEME, applyChartTheme } from '@/lib/chart-theme.js'
 import {
   normalizeTimestamp,
