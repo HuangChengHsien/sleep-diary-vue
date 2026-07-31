@@ -83,8 +83,9 @@
       </div>
 
       <div v-if="excludedInRangeCount > 0" class="stats-notice">
-        🚫 這個範圍內有 {{ excludedInRangeCount }} 筆記錄被你標記為「不列入分析」，
-        上方所有統計與下方圖表都不含這些記錄。可到日誌頁面調整。
+        🚫 這個範圍內有 {{ excludedInRangeCount }} 筆記錄被你標記為「不列入分析」。
+        上方統計與趨勢圖表都不含這些記錄；時間軸圖表仍會以淡色畫出，方便對照前後文。
+        可到日誌頁面調整。
       </div>
 
       <div v-if="filteredStatistics.recordsExcludedFromNightStats > 0" class="stats-notice">
@@ -300,6 +301,10 @@
           </canvas>
         </div>
 
+        <p v-if="chartType === 'timeline' && excludedInRangeCount > 0" class="chart-legend-note">
+          淡色加外框的區段是標記「不列入分析」的記錄，圖上照實呈現，但不計入上方統計。
+        </p>
+
         <div v-show="!hasChartData" class="chart-empty">
           <div class="chart-empty-icon">📭</div>
           <p>{{ chartEmptyMessage }}</p>
@@ -428,6 +433,13 @@ const excludedInRangeCount = computed(
   () => filterDataByDays(excludedRecords(sleepRecords.value), chartFilter.value.dayRange).length,
 )
 
+// 時間軸專用：只套日期範圍，不濾掉已排除的紀錄。
+// 這張圖是用來看前後文的，挖掉生病／出差那幾天反而看不出那段期間發生過什麼；
+// 被排除的區段會以淡色加外框畫出，並在圖下方註明未計入統計。
+const timelineSleepRecords = computed(() =>
+  filterDataByDays(sleepRecords.value, chartFilter.value.dayRange),
+)
+
 const filteredDailySleepData = computed(() => {
   if (analysableSleepRecords.value.length === 0) {
     return []
@@ -462,9 +474,12 @@ const filteredStatistics = computed(() => {
 // 提示文案裡的「超過 N 小時」，與 chart-calc 判定用的門檻同源
 const extremeLatencyHours = Math.round(MAX_PLAUSIBLE_LATENCY_MINUTES / 60)
 
-const hasChartData = computed(() =>
-  Boolean(filteredSleepRecords.value && filteredSleepRecords.value.length > 0),
-)
+const hasChartData = computed(() => {
+  // 全部紀錄都被排除時，時間軸仍有東西可畫（淡色），其他圖表則是真的空的
+  const records =
+    chartType.value === 'timeline' ? timelineSleepRecords.value : filteredSleepRecords.value
+  return records.length > 0
+})
 
 // 沒有圖可畫時，說明是哪一種「沒有」，避免使用者以為功能壞了
 const chartEmptyMessage = computed(() => {
@@ -671,7 +686,8 @@ const updateChart = async () => {
       renderChart(
         null,
         chartType.value,
-        filteredSleepRecords.value,
+        // 時間軸刻意吃完整資料（含已排除），其餘圖表沿用排除後的集合
+        chartType.value === 'timeline' ? timelineSleepRecords.value : filteredSleepRecords.value,
         formattedEventData.value,
         showEvents.value,
         showSleep.value,
@@ -1244,6 +1260,12 @@ canvas {
   background: #131B33 !important;
 }
 
+.chart-legend-note {
+  margin: 10px 0 0;
+  font-size: 11px; line-height: 1.6;
+  color: rgba(241,237,224,0.4);
+}
+
 .chart-empty {
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
@@ -1291,6 +1313,9 @@ canvas {
   .stat-value { color: #111 !important; }
   .stat-label { color: #444 !important; }
   .stat-subtitle { color: #666 !important; }
+
+  /* 列印時圖例說明會落在白底上，淡色會看不見 */
+  .chart-legend-note { color: #555 !important; }
 
   /* 列印給醫師看的報告，資料可信度的提醒必須跟著印出來 */
   .stats-notice,
