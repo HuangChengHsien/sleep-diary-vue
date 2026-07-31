@@ -288,6 +288,12 @@ import { useRouter } from 'vue-router'
 import { useBabyManagement } from '@/composables/useBabyManagement'
 import { useChartAnalysis } from '@/composables/useChartAnalysis'
 import {
+  calculateSleepStatistics,
+  processDailySleepData,
+  calculateAgeInMonths,
+} from '@/lib/chart-calc'
+import { DARK_THEME } from '@/lib/chart-theme'
+import {
   getLatencyRating,
   getTotalSleepRating,
   getSleepOnsetRating,
@@ -306,15 +312,7 @@ const {
   selectBaby,
 } = useBabyManagement()
 
-const {
-  calculateSleepStatistics,
-  processDailySleepData,
-  renderChart,
-  renderDailyDurationChart,
-  destroyChart,
-  calculateAgeInMonths,
-  DARK_THEME,
-} = useChartAnalysis()
+const { renderChart, renderDailyDurationChart, destroyChart } = useChartAnalysis()
 
 // 響應式數據
 const isLoading = ref(true)
