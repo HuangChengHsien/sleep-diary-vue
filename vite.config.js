@@ -8,7 +8,14 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
+// 建置日期。列印出來的報告會帶上這個戳記 —— 統計算法會隨版本調整，
+// 事後有人問「這份報告的數字怎麼算的」，這是唯一能回答的線索。
+const BUILD_DATE = new Date().toISOString().slice(0, 10)
+
 export default defineConfig({
+  define: {
+    'import.meta.env.VITE_BUILD_DATE': JSON.stringify(BUILD_DATE),
+  },
   // --- 基礎設定 ---
   plugins: [
     vue(),
