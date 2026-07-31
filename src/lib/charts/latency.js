@@ -7,6 +7,7 @@ import { chartManager } from './chart-manager.js'
 import { drawNoDataMessage } from './no-data.js'
 import { normalizeTimestamp, getLocalDateString } from '@/lib/chart-calc.js'
 import { getLatencyChartBands } from '@/lib/sleep-references.js'
+import { MAX_PLAUSIBLE_LATENCY_MINUTES } from '@/lib/sleep-record-input.js'
 
 export const renderLatencyChart = (sleepData) => {
   const canvas = document.getElementById('latencyCanvas')
@@ -24,7 +25,7 @@ export const renderLatencyChart = (sleepData) => {
         if (sleepTime.getHours() >= 18 || sleepTime.getHours() < 9) {
           const latencyMinutes = (sleepTime - bedTime) / 60000
           // 只考慮合理的入睡時間（0-180分鐘）
-          if (latencyMinutes >= 0 && latencyMinutes <= 180) {
+          if (latencyMinutes >= 0 && latencyMinutes <= MAX_PLAUSIBLE_LATENCY_MINUTES) {
             return {
               date: getLocalDateString(sleepTime),
               latency: Math.round(latencyMinutes),

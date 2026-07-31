@@ -5,6 +5,7 @@ import { Chart } from './chart-setup.js'
 import { chartManager } from './chart-manager.js'
 import { drawNoDataMessage } from './no-data.js'
 import { normalizeTimestamp, getLocalDateString } from '@/lib/chart-calc.js'
+import { MAX_PLAUSIBLE_LATENCY_MINUTES } from '@/lib/sleep-record-input.js'
 
 export const renderTimelineChart = (sleepData, eventData, showEvents, showSleep) => {
   const canvas = document.getElementById('timelineCanvas')
@@ -74,7 +75,7 @@ export const renderTimelineChart = (sleepData, eventData, showEvents, showSleep)
       if (bedTime && sleepStart && sleepStart > bedTime) {
         const bedTimeDateStr = getLocalDateString(bedTime)
         const sleepStartDateStr = getLocalDateString(sleepStart)
-        if ((sleepStart - bedTime) / 60000 < 180) {
+        if ((sleepStart - bedTime) / 60000 < MAX_PLAUSIBLE_LATENCY_MINUTES) {
           if (bedTimeDateStr !== sleepStartDateStr) {
             processedSleepData.push({
               x: [timeToHours(bedTime), 24],

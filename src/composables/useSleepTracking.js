@@ -4,6 +4,7 @@
 import { ref, computed } from 'vue'
 import { useLocalDB } from './useLocalDB'
 import { useDiaryUtils } from './useDiaryUtils'
+import { buildRecordTimestamps } from '@/lib/sleep-record-input.js'
 
 export function useSleepTracking() {
   const { saveSleepRecord, deleteSleepRecord } = useLocalDB()
@@ -136,27 +137,14 @@ export function useSleepTracking() {
     const { date, bedtime, sleepTime, wakeTime, wakeCount, notes } = formData
     if (!date) throw new Error('請選擇日期')
 
+    // 跨日修正由 buildRecordTimestamps 處理（與編輯路徑、輸入檢查共用同一套邏輯）
     const newRecord = {
       id: 'sleep_' + Date.now(),
       date,
-      bedTimestamp:   bedtime   ? new Date(`${date}T${bedtime}`)   : null,
-      sleepTimestamp: sleepTime ? new Date(`${date}T${sleepTime}`) : null,
-      wakeTimestamp:  wakeTime  ? new Date(`${date}T${wakeTime}`)  : null,
+      ...buildRecordTimestamps({ date, bedtime, sleepTime, wakeTime }),
       wakeCount: parseInt(wakeCount) || 0,
       notes,
       created: new Date(),
-    }
-
-    // 跨日修正
-    if (newRecord.sleepTimestamp && newRecord.bedTimestamp &&
-        newRecord.sleepTimestamp < newRecord.bedTimestamp) {
-      newRecord.sleepTimestamp.setDate(newRecord.sleepTimestamp.getDate() + 1)
-    }
-    if (newRecord.wakeTimestamp) {
-      const anchor = newRecord.sleepTimestamp || newRecord.bedTimestamp
-      if (anchor && newRecord.wakeTimestamp < anchor) {
-        newRecord.wakeTimestamp.setDate(newRecord.wakeTimestamp.getDate() + 1)
-      }
     }
 
     // 12點前算前一天
@@ -176,19 +164,10 @@ export function useSleepTracking() {
     if (!currentBabyId) throw new Error('請先選擇個案')
 
     const { date, bedtime, sleepTime, wakeTime, wakeCount, notes } = formData
-    const bed   = bedtime   ? new Date(`${date}T${bedtime}`)   : null
-    let sleep   = sleepTime ? new Date(`${date}T${sleepTime}`) : null
-    let wake    = wakeTime  ? new Date(`${date}T${wakeTime}`)  : null
-
-    if (sleep && bed && sleep < bed) sleep.setDate(sleep.getDate() + 1)
-    const anchorWake = sleep || bed
-    if (wake && anchorWake && wake < anchorWake) wake.setDate(wake.getDate() + 1)
 
     const data = {
       id: recordId,
-      bedTimestamp: bed,
-      sleepTimestamp: sleep,
-      wakeTimestamp: wake,
+      ...buildRecordTimestamps({ date, bedtime, sleepTime, wakeTime }),
       wakeCount: parseInt(wakeCount) || 0,
       notes,
       date,
