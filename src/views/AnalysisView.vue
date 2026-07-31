@@ -83,7 +83,9 @@
       </div>
 
       <div v-if="excludedInRangeCount > 0" class="stats-notice">
-        🚫 這個範圍內有 {{ excludedInRangeCount }} 筆記錄被你標記為「不列入分析」。
+        🚫 這個範圍內有 {{ excludedInRangeCount }} 筆記錄被標記為「不列入分析」<template
+          v-if="excludedPeriodLabels"
+        >（{{ excludedPeriodLabels }}）</template>。
         上方統計與趨勢圖表都不含這些記錄；時間軸圖表仍會以淡色畫出，方便對照前後文。
         可到日誌頁面調整。
       </div>
@@ -326,7 +328,12 @@ import {
 } from '@/lib/chart-calc'
 import { DARK_THEME } from '@/lib/chart-theme'
 import { MAX_PLAUSIBLE_LATENCY_MINUTES } from '@/lib/sleep-record-input'
-import { analysableRecords, excludedRecords } from '@/lib/record-exclusion'
+import {
+  analysableRecords,
+  excludedRecords,
+  excludedPeriods,
+  formatPeriodLabel,
+} from '@/lib/record-exclusion'
 import {
   getLatencyRating,
   getTotalSleepRating,
@@ -431,6 +438,14 @@ const filteredSleepRecords = computed(() => {
 // 目前顯示範圍內被排除的筆數 —— 排除必須看得見，否則就是另一種無聲丟資料
 const excludedInRangeCount = computed(
   () => filterDataByDays(excludedRecords(sleepRecords.value), chartFilter.value.dayRange).length,
+)
+
+// 排除了哪幾段期間。印出來的報告要交到醫師手上，只講「排除 12 筆」沒有意義，
+// 得說明是哪幾天 —— 否則讀報告的人無從判斷這份統計涵蓋什麼。
+const excludedPeriodLabels = computed(() =>
+  excludedPeriods(filterDataByDays(excludedRecords(sleepRecords.value), chartFilter.value.dayRange))
+    .map(formatPeriodLabel)
+    .join('、'),
 )
 
 // 時間軸專用：只套日期範圍，不濾掉已排除的紀錄。

@@ -36,3 +36,55 @@ export const recordsInDateRange = (records, startDate, endDate) => {
     return d !== null && d >= from && d <= to
   })
 }
+
+// 隔天的日期字串。用 Date 做加一天，跨月跨年由它處理。
+const nextDayString = (dateStr) => {
+  const d = new Date(`${dateStr}T00:00:00`)
+  d.setDate(d.getDate() + 1)
+  return getLocalDateString(d)
+}
+
+// 把被排除的紀錄依日期歸併成連續區段，供畫面顯示與逐段恢復。
+//
+// 排除是逐筆存的，所以「排除了哪幾段期間」得從資料反推。沒有這個摘要，
+// 使用者排掉三個週末之後就只看得到一個總筆數，事後無從辨識也無法單獨恢復。
+//
+// 無法判定日期的紀錄不會出現在任何區段（也無從歸併），
+// 因此各區段的筆數總和可能小於被排除的總筆數。
+export const excludedPeriods = (records) => {
+  const countByDate = new Map()
+  for (const record of excludedRecords(records)) {
+    const date = recordDateString(record)
+    if (!date) continue
+    countByDate.set(date, (countByDate.get(date) || 0) + 1)
+  }
+
+  const periods = []
+  for (const date of [...countByDate.keys()].sort()) {
+    const last = periods[periods.length - 1]
+    if (last && nextDayString(last.endDate) === date) {
+      last.endDate = date
+      last.dayCount += 1
+      last.recordCount += countByDate.get(date)
+    } else {
+      periods.push({
+        startDate: date,
+        endDate: date,
+        dayCount: 1,
+        recordCount: countByDate.get(date),
+      })
+    }
+  }
+  return periods
+}
+
+// 顯示用的簡短標籤，例如 8/2 或 8/2–8/3
+export const formatPeriodLabel = (period) => {
+  const short = (d) => {
+    const [, month, day] = d.split('-')
+    return `${Number(month)}/${Number(day)}`
+  }
+  return period.startDate === period.endDate
+    ? short(period.startDate)
+    : `${short(period.startDate)}–${short(period.endDate)}`
+}
