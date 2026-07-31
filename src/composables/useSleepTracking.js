@@ -2,11 +2,11 @@
 // 睡眠記錄追蹤 - 本地儲存版（不需要帳號）
 
 import { ref, computed } from 'vue'
-import { useFirestore } from './useFirestore'
+import { useLocalDB } from './useLocalDB'
 import { useDiaryUtils } from './useDiaryUtils'
 
 export function useSleepTracking() {
-  const { saveSleepRecord, deleteSleepRecord } = useFirestore()
+  const { saveSleepRecord, deleteSleepRecord } = useLocalDB()
   const {
     normalizeTimestamp,
     getTodayString,

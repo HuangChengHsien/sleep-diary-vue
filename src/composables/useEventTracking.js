@@ -2,11 +2,11 @@
 // 事件記錄追蹤 - 本地儲存版（不需要帳號）
 
 import { ref } from 'vue'
-import { useFirestore } from './useFirestore'
+import { useLocalDB } from './useLocalDB'
 import { useDiaryUtils } from './useDiaryUtils'
 
 export function useEventTracking() {
-  const { saveEventRecord, deleteEventRecord } = useFirestore()
+  const { saveEventRecord, deleteEventRecord } = useLocalDB()
   const { normalizeTimestamp, getCurrentTime, formatTime, formatShortDate } = useDiaryUtils()
 
   const currentFilter = ref('today')
