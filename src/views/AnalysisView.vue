@@ -207,80 +207,92 @@
         <div class="chart-header">
           <h3 class="chart-title">{{ chartTitle }}</h3>
           <div class="chart-actions">
-            <button @click="downloadChart" class="download-btn">💾 下載圖片</button>
-            <button @click="refreshChart" class="refresh-btn">🔄 重繪</button>
+            <button @click="downloadChart" class="download-btn" :disabled="!hasChartData">
+              💾 下載圖片
+            </button>
+            <button @click="refreshChart" class="refresh-btn" :disabled="!hasChartData">
+              🔄 重繪
+            </button>
           </div>
         </div>
 
-        <canvas
-          v-show="chartType === 'timeline'"
-          id="timelineCanvas"
-          ref="timelineCanvas"
-          width="1200"
-          height="2000"
-          style="width: 100%; height: 2000px"
-        >
-        </canvas>
+        <!-- canvas 一律保持掛載（v-show 而非 v-if），renderXxxChart 靠 getElementById 取得 -->
+        <div v-show="hasChartData">
+          <canvas
+            v-show="chartType === 'timeline'"
+            id="timelineCanvas"
+            ref="timelineCanvas"
+            width="1200"
+            height="2000"
+            style="width: 100%; height: 2000px"
+          >
+          </canvas>
 
-        <canvas
-          v-show="chartType === 'duration'"
-          id="durationCanvas"
-          ref="durationCanvas"
-          width="1200"
-          height="800"
-          style="width: 100%; height: 800px"
-        >
-        </canvas>
+          <canvas
+            v-show="chartType === 'duration'"
+            id="durationCanvas"
+            ref="durationCanvas"
+            width="1200"
+            height="800"
+            style="width: 100%; height: 800px"
+          >
+          </canvas>
 
-        <canvas
-          v-show="chartType === 'dailyDuration'"
-          id="dailyDurationCanvas"
-          ref="dailyDurationCanvas"
-          width="1200"
-          height="800"
-          style="width: 100%; height: 800px"
-        >
-        </canvas>
+          <canvas
+            v-show="chartType === 'dailyDuration'"
+            id="dailyDurationCanvas"
+            ref="dailyDurationCanvas"
+            width="1200"
+            height="800"
+            style="width: 100%; height: 800px"
+          >
+          </canvas>
 
-        <canvas
-          v-show="chartType === 'bedtime'"
-          id="bedtimeCanvas"
-          ref="bedtimeCanvas"
-          width="1200"
-          height="400"
-          style="width: 100%; height: 400px"
-        >
-        </canvas>
+          <canvas
+            v-show="chartType === 'bedtime'"
+            id="bedtimeCanvas"
+            ref="bedtimeCanvas"
+            width="1200"
+            height="400"
+            style="width: 100%; height: 400px"
+          >
+          </canvas>
 
-        <canvas
-          v-show="chartType === 'latency'"
-          id="latencyCanvas"
-          ref="latencyCanvas"
-          width="1200"
-          height="400"
-          style="width: 100%; height: 400px"
-        >
-        </canvas>
+          <canvas
+            v-show="chartType === 'latency'"
+            id="latencyCanvas"
+            ref="latencyCanvas"
+            width="1200"
+            height="400"
+            style="width: 100%; height: 400px"
+          >
+          </canvas>
 
-        <canvas
-          v-show="chartType === 'wakeCount'"
-          id="wakeCountCanvas"
-          ref="wakeCountCanvas"
-          width="1200"
-          height="400"
-          style="width: 100%; height: 400px"
-        >
-        </canvas>
+          <canvas
+            v-show="chartType === 'wakeCount'"
+            id="wakeCountCanvas"
+            ref="wakeCountCanvas"
+            width="1200"
+            height="400"
+            style="width: 100%; height: 400px"
+          >
+          </canvas>
 
-        <canvas
-          v-show="chartType === 'weekly'"
-          id="weeklyCanvas"
-          ref="weeklyCanvas"
-          width="1200"
-          height="400"
-          style="width: 100%; height: 400px"
-        >
-        </canvas>
+          <canvas
+            v-show="chartType === 'weekly'"
+            id="weeklyCanvas"
+            ref="weeklyCanvas"
+            width="1200"
+            height="400"
+            style="width: 100%; height: 400px"
+          >
+          </canvas>
+        </div>
+
+        <div v-show="!hasChartData" class="chart-empty">
+          <div class="chart-empty-icon">📭</div>
+          <p>{{ chartEmptyMessage }}</p>
+        </div>
       </div>
     </div>
   </div>
@@ -428,6 +440,20 @@ const filteredStatistics = computed(() => {
 
 // 提示文案裡的「超過 N 小時」，與 chart-calc 判定用的門檻同源
 const extremeLatencyHours = Math.round(MAX_PLAUSIBLE_LATENCY_MINUTES / 60)
+
+const hasChartData = computed(() =>
+  Boolean(filteredSleepRecords.value && filteredSleepRecords.value.length > 0),
+)
+
+// 沒有圖可畫時，說明是哪一種「沒有」，避免使用者以為功能壞了
+const chartEmptyMessage = computed(() => {
+  if (!currentBaby.value) return '請先選擇個案'
+  if (!sleepRecords.value || sleepRecords.value.length === 0) {
+    return '這個個案還沒有睡眠記錄'
+  }
+  if (chartFilter.value.dayRange === 'all') return '沒有可顯示的睡眠記錄'
+  return `最近 ${chartFilter.value.dayRange} 天沒有睡眠記錄，可以放寬上方的顯示範圍`
+})
 
 // 原有的計算屬性
 const currentBabyDisplay = computed(() => {
@@ -597,7 +623,10 @@ const handleBabyChange = async () => {
 }
 
 const updateChart = async () => {
-  if (!filteredSleepRecords.value || filteredSleepRecords.value.length === 0) {
+  // 沒有資料時必須主動清掉圖表。早期版本在這裡直接 return，於是切換到沒有記錄的
+  // 個案時，畫面上留著的是「上一個個案」的圖 —— 看圖的人不會發現張冠李戴。
+  if (!hasChartData.value) {
+    destroyChart()
     return
   }
 
@@ -631,14 +660,14 @@ const updateChart = async () => {
 }
 
 // Watch 監聽器
+// 以下 watcher 一律呼叫 updateChart，不再自己判斷有沒有資料 ——
+// 「沒有資料」也是一種需要更新畫面的狀態（要把舊個案的圖清掉）。
 watch(
   currentBaby,
-  (newBaby) => {
-    if (newBaby && sleepRecords.value.length > 0) {
-      setTimeout(() => {
-        updateChart()
-      }, 100)
-    }
+  () => {
+    setTimeout(() => {
+      updateChart()
+    }, 100)
   },
   { deep: true },
 )
@@ -715,10 +744,8 @@ watch(currentBabyId, (newId) => {
 
 watch(
   () => sleepRecords.value,
-  (newRecords) => {
-    if (newRecords && newRecords.length > 0) {
-      updateChart()
-    }
+  () => {
+    updateChart()
   },
   { deep: true, immediate: true },
 )
@@ -773,12 +800,10 @@ onMounted(async () => {
 
     isLoading.value = false
 
-    // 確保在有寶寶資料時立即更新圖表
-    if (currentBaby.value && sleepRecords.value && sleepRecords.value.length > 0) {
-      setTimeout(() => {
-        updateChart()
-      }, 500)
-    }
+    // 初始化完成後更新一次圖表。沒有資料也要跑，讓空狀態正確顯示。
+    setTimeout(() => {
+      updateChart()
+    }, 500)
   } catch (error) {
     console.error('AnalysisView 初始化失敗:', error)
     errorMessage.value = error.message || '初始化失敗'
@@ -1166,15 +1191,38 @@ table tr:hover td { background: rgba(241,237,224,0.02); }
   transition: all 0.15s;
 }
 
-.download-btn:hover,
-.refresh-btn:hover {
+.download-btn:hover:not(:disabled),
+.refresh-btn:hover:not(:disabled) {
   background: rgba(241,237,224,0.1); color: #F1EDE0;
+}
+
+.download-btn:disabled,
+.refresh-btn:disabled {
+  opacity: 0.35; cursor: not-allowed;
 }
 
 canvas {
   display: block;
   border-radius: 14px;
   background: #131B33 !important;
+}
+
+.chart-empty {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 10px;
+  min-height: 280px;
+  background: #131B33;
+  border: 1px solid rgba(241,237,224,0.08);
+  border-radius: 14px;
+  text-align: center; padding: 24px;
+}
+
+.chart-empty-icon { font-size: 36px; opacity: 0.5; }
+.chart-empty p {
+  margin: 0;
+  font-size: 13px; color: rgba(241,237,224,0.4);
+  line-height: 1.6; max-width: 30em;
 }
 
 /* 非 timeline 圖表固定高度，!important 防止 Chart.js resize loop */
