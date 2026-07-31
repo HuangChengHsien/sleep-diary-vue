@@ -1,12 +1,13 @@
 // src/composables/useChartAnalysis.spec.js
-// 純函式測試：只涵蓋不依賴 Chart.js/canvas/DOM 的計算邏輯
-// （calculateAgeInMonths、processDailySleepData、calculateSleepStatistics）。
-// 圖表渲染函式因為與 Chart.js/DOM 深度耦合，本檔案不測。
+// 純函式測試：涵蓋不依賴 Chart.js/canvas/DOM 的計算邏輯。
+// 這些函式現已抽到 @/lib/chart-calc，測試也直接對純模組作用。
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { useChartAnalysis } from './useChartAnalysis'
-
-const { calculateAgeInMonths, processDailySleepData, calculateSleepStatistics } = useChartAnalysis()
+import {
+  calculateAgeInMonths,
+  processDailySleepData,
+  calculateSleepStatistics,
+} from '@/lib/chart-calc'
 
 describe('calculateAgeInMonths', () => {
   beforeEach(() => {
