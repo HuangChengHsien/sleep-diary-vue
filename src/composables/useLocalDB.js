@@ -1,6 +1,5 @@
-// src/composables/useFirestore.js
-// 本地 IndexedDB 資料存取層（以 Dexie 取代 Firebase Firestore）
-// 函式簽名刻意保持與原版相同（移除 userId 參數），composable 層無需大改
+// src/composables/useLocalDB.js
+// 本地 IndexedDB 資料存取層（使用 Dexie）
 
 import { ref } from 'vue'
 import db from '@/db/localDB'
@@ -13,12 +12,30 @@ const toISO = (val) => {
   return String(val)
 }
 
-export function useFirestore() {
+// 為 bulk 匯入產生不會撞在同一毫秒的 id
+let bulkIdCounter = 0
+const nextBulkId = (prefix) => `${prefix}_${Date.now()}_${bulkIdCounter++}`
+
+const normalizeSleepRecord = (babyId, record) => ({
+  ...record,
+  id: record.id || nextBulkId('sleep'),
+  babyId,
+  bedTimestamp:   toISO(record.bedTimestamp),
+  sleepTimestamp: toISO(record.sleepTimestamp),
+  wakeTimestamp:  toISO(record.wakeTimestamp),
+  created:        toISO(record.created) || new Date().toISOString(),
+})
+
+const normalizeEventRecord = (babyId, record) => ({
+  ...record,
+  id: record.id || nextBulkId('event'),
+  babyId,
+  created: toISO(record.created) || new Date().toISOString(),
+})
+
+export function useLocalDB() {
   const isLoading = ref(false)
   const error = ref(null)
-
-  // 保留此函式名稱以相容現有呼叫，不做任何事
-  const enableOffline = async () => {}
 
   // ── 個案 (寶寶) ───────────────────────────────────
 
@@ -106,18 +123,9 @@ export function useFirestore() {
     try {
       isLoading.value = true
       error.value = null
-      const id = record.id || 'sleep_' + Date.now()
-      const data = {
-        ...record,
-        id,
-        babyId,
-        bedTimestamp:   toISO(record.bedTimestamp),
-        sleepTimestamp: toISO(record.sleepTimestamp),
-        wakeTimestamp:  toISO(record.wakeTimestamp),
-        created:        toISO(record.created) || new Date().toISOString(),
-      }
+      const data = normalizeSleepRecord(babyId, record)
       await db.sleepRecords.put(data)
-      return id
+      return data.id
     } catch (err) {
       error.value = err.message
       throw err
@@ -145,15 +153,9 @@ export function useFirestore() {
     try {
       isLoading.value = true
       error.value = null
-      const id = record.id || 'event_' + Date.now()
-      const data = {
-        ...record,
-        id,
-        babyId,
-        created: toISO(record.created) || new Date().toISOString(),
-      }
+      const data = normalizeEventRecord(babyId, record)
       await db.eventRecords.put(data)
-      return id
+      return data.id
     } catch (err) {
       error.value = err.message
       throw err
@@ -175,10 +177,41 @@ export function useFirestore() {
     }
   }
 
+  // ── 批次匯入（供備份還原使用） ────────────────────
+
+  const bulkSaveSleepRecords = async (babyId, records) => {
+    if (!records?.length) return
+    try {
+      isLoading.value = true
+      error.value = null
+      const data = records.map((r) => normalizeSleepRecord(babyId, r))
+      await db.sleepRecords.bulkPut(data)
+    } catch (err) {
+      error.value = err.message
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const bulkSaveEventRecords = async (babyId, records) => {
+    if (!records?.length) return
+    try {
+      isLoading.value = true
+      error.value = null
+      const data = records.map((r) => normalizeEventRecord(babyId, r))
+      await db.eventRecords.bulkPut(data)
+    } catch (err) {
+      error.value = err.message
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   return {
     isLoading,
     error,
-    enableOffline,
     loadBabies,
     saveBaby,
     deleteBaby,
@@ -187,5 +220,7 @@ export function useFirestore() {
     saveEventRecord,
     deleteSleepRecord,
     deleteEventRecord,
+    bulkSaveSleepRecords,
+    bulkSaveEventRecords,
   }
 }

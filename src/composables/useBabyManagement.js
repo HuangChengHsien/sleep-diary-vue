@@ -2,13 +2,19 @@
 // 個案（寶寶）資料管理 - 本地儲存版（不需要帳號）
 
 import { ref, computed, watch } from 'vue'
-import { useFirestore } from './useFirestore'
+import { useLocalDB } from './useLocalDB'
 import { useDiaryUtils } from './useDiaryUtils'
 import db from '@/db/localDB'
 
 export function useBabyManagement() {
-  const { loadBabies, saveBaby, deleteBaby, loadBabyRecords, saveSleepRecord, saveEventRecord } =
-    useFirestore()
+  const {
+    loadBabies,
+    saveBaby,
+    deleteBaby,
+    loadBabyRecords,
+    bulkSaveSleepRecords,
+    bulkSaveEventRecords,
+  } = useLocalDB()
   const { calculateAge } = useDiaryUtils()
 
   const babies = ref({})
@@ -169,20 +175,9 @@ export function useBabyManagement() {
     try {
       isLoading.value = true
 
-      // 儲存個案基本資料
       await db.babies.put({ id: babyId, ...babyInfo })
-
-      // 儲存睡眠記錄
-      const sleepArr = backupData.sleepRecords || []
-      for (const rec of sleepArr) {
-        await saveSleepRecord(babyId, { ...rec, babyId })
-      }
-
-      // 儲存事件記錄
-      const eventArr = backupData.records || []
-      for (const rec of eventArr) {
-        await saveEventRecord(babyId, { ...rec, babyId })
-      }
+      await bulkSaveSleepRecords(babyId, backupData.sleepRecords || [])
+      await bulkSaveEventRecords(babyId, backupData.records || [])
 
       // 更新記憶體中的個案列表
       babies.value[babyId] = babyInfo
