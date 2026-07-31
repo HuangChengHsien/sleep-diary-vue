@@ -10,7 +10,7 @@
 
 ## 隱私與資料儲存
 
-**所有紀錄僅儲存於你自己裝置的瀏覽器（localStorage）。**
+**所有紀錄僅儲存於你自己裝置的瀏覽器（IndexedDB）。**
 
 - 資料不會上傳到任何伺服器
 - 沒有帳號、沒有登入、不蒐集任何個人資訊
@@ -27,9 +27,10 @@
 
 ### 技術棧
 
-- Vue 3
-- Vite
+- Vue 3 + Vite
 - Vue Router
+- Dexie（IndexedDB 封裝）作為本機資料層
+- Chart.js（`chart.js` + `chartjs-adapter-date-fns` + `chartjs-plugin-annotation`）
 - vite-plugin-pwa（僅 production build 啟用 Service Worker）
 - 部署：Vercel，`main` 分支自動部署
 
