@@ -114,6 +114,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue' // 修復：加入 computed
 import { useSleepTracking } from '@/composables/useSleepTracking'
 import { useDiaryUtils } from '@/composables/useDiaryUtils'
+import { checkSleepRecordInput } from '@/lib/sleep-record-input.js'
 
 const props = defineProps({
   record: {
@@ -186,6 +187,10 @@ const handleSubmit = async () => {
     emit('show-message', '記錄日期不能是未來日期', 'error')
     return
   }
+
+  // 明顯不合理的入睡耗時先跟使用者確認一次（只提示、不阻擋）
+  const warning = checkSleepRecordInput(form.value)
+  if (warning && !window.confirm(warning)) return
 
   try {
     isLoading.value = true

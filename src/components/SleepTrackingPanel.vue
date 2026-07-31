@@ -90,6 +90,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { useSleepTracking } from '@/composables/useSleepTracking'
 import { useDiaryUtils } from '@/composables/useDiaryUtils'
+import { checkSleepRecordInput } from '@/lib/sleep-record-input.js'
 
 const props = defineProps({
   currentBabyId: {
@@ -195,6 +196,10 @@ const setWakeTimeNow = () => {
 }
 
 const handleAddManualRecord = async () => {
+  // 明顯不合理的入睡耗時先跟使用者確認一次（只提示、不阻擋）
+  const warning = checkSleepRecordInput(manualForm.value)
+  if (warning && !window.confirm(warning)) return
+
   try {
     isLoading.value = true
     const message = await addManualSleepRecord(props.currentBabyId, manualForm.value, () =>
