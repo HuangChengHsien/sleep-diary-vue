@@ -1,10 +1,16 @@
 // src/lib/charts/timeline.js
 // 睡眠時間軸圖表：每一列是一天，橫軸 0–24 時，畫出睡眠區段、入睡準備區段與事件標記。
+//
+// 這張圖刻意包含使用者標記為「不列入分析」的紀錄（其他圖表與統計都不含）。
+// 時間軸是拿來看前後文的 —— 生病或出差那幾天放在整段作息裡看，本身就是資訊，
+// 挖空反而看不出那段期間發生過什麼。被排除的區段以淡色加外框畫出，
+// 讓「圖上有、數字裡沒有」這件事在圖上就看得出來。
 
 import { Chart } from './chart-setup.js'
 import { chartManager } from './chart-manager.js'
 import { drawNoDataMessage } from './no-data.js'
 import { normalizeTimestamp, getLocalDateString } from '@/lib/chart-calc.js'
+import { isExcludedFromAnalysis } from '@/lib/record-exclusion.js'
 
 export const renderTimelineChart = (sleepData, eventData, showEvents, showSleep) => {
   const canvas = document.getElementById('timelineCanvas')
@@ -46,6 +52,7 @@ export const renderTimelineChart = (sleepData, eventData, showEvents, showSleep)
 
   if (showSleep) {
     sleepData.forEach((record) => {
+      const excluded = isExcludedFromAnalysis(record)
       const sleepStart = normalizeTimestamp(record.sleepTimestamp)
       const wakeUp = normalizeTimestamp(record.wakeTimestamp)
       const bedTime = normalizeTimestamp(record.bedTimestamp)
@@ -57,17 +64,20 @@ export const renderTimelineChart = (sleepData, eventData, showEvents, showSleep)
             x: [timeToHours(sleepStart), 24],
             y: sleepStartDateStr,
             type: 'sleep',
+            excluded,
           })
           processedSleepData.push({
             x: [0, timeToHours(wakeUp)],
             y: wakeUpDateStr,
             type: 'sleep',
+            excluded,
           })
         } else {
           processedSleepData.push({
             x: [timeToHours(sleepStart), timeToHours(wakeUp)],
             y: sleepStartDateStr,
             type: 'sleep',
+            excluded,
           })
         }
       }
@@ -82,17 +92,20 @@ export const renderTimelineChart = (sleepData, eventData, showEvents, showSleep)
             x: [timeToHours(bedTime), 24],
             y: bedTimeDateStr,
             type: 'latency',
+            excluded,
           })
           processedSleepData.push({
             x: [0, timeToHours(sleepStart)],
             y: sleepStartDateStr,
             type: 'latency',
+            excluded,
           })
         } else {
           processedSleepData.push({
             x: [timeToHours(bedTime), timeToHours(sleepStart)],
             y: bedTimeDateStr,
             type: 'latency',
+            excluded,
           })
         }
       }
@@ -138,11 +151,18 @@ export const renderTimelineChart = (sleepData, eventData, showEvents, showSleep)
         {
           data: processedSleepData,
           backgroundColor: function (ctx) {
-            if (ctx.raw && ctx.raw.type === 'sleep') {
-              return '#4CAF50'
+            const d = ctx.raw
+            if (!d) return 'rgba(128, 128, 128, 0.5)'
+            // 已排除：同色系但大幅降低不透明度，看得到形狀、不會搶走注意力
+            if (d.excluded) {
+              return d.type === 'sleep' ? 'rgba(76, 175, 80, 0.22)' : 'rgba(128, 128, 128, 0.15)'
             }
-            return 'rgba(128, 128, 128, 0.5)'
+            return d.type === 'sleep' ? '#4CAF50' : 'rgba(128, 128, 128, 0.5)'
           },
+          // 已排除的區段加一圈虛邊，單靠淡化在深色背景上不夠明確
+          borderColor: (ctx) =>
+            ctx.raw?.excluded ? 'rgba(241, 237, 224, 0.4)' : 'rgba(0, 0, 0, 0)',
+          borderWidth: (ctx) => (ctx.raw?.excluded ? 1 : 0),
           barPercentage: 0.5,
           borderSkipped: false,
         },
@@ -193,7 +213,8 @@ export const renderTimelineChart = (sleepData, eventData, showEvents, showSleep)
                 `${String(Math.floor(h)).padStart(2, '0')}:${String(Math.round((h - Math.floor(h)) * 60)).padStart(2, '0')}`
               const type = data.type === 'sleep' ? '睡眠' : '入睡準備'
               const duration = Math.round(Math.abs(data.x[1] - data.x[0]) * 60)
-              return `${type}: ${hoursToTime(data.x[0])} - ${hoursToTime(data.x[1])} (${duration}分鐘)`
+              const suffix = data.excluded ? '　※ 未計入統計' : ''
+              return `${type}: ${hoursToTime(data.x[0])} - ${hoursToTime(data.x[1])} (${duration}分鐘)${suffix}`
             },
           },
         },
