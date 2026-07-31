@@ -88,7 +88,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'record-updated', 'show-message'])
 
 const { editEventRecord } = useEventTracking()
-const { normalizeTimestamp, getCurrentTime } = useDiaryUtils()
+const { getCurrentTime } = useDiaryUtils()
 
 // 響應式數據
 const isLoading = ref(false)

@@ -245,7 +245,6 @@ import EventRecordEditDialog from '@/components/EventRecordEditDialog.vue'
 const router = useRouter()
 
 const {
-  babies,
   currentBabyId,
   currentBaby,
   babyList,
@@ -254,7 +253,6 @@ const {
   isLoading,
   loadAllBabies,
   selectBaby,
-  addBaby,
   removeBaby,
   reloadCurrentBabyRecords,
   importBabyData,
@@ -270,15 +268,7 @@ const {
 
 const { removeSleepRecord } = useSleepTracking()
 
-const {
-  formatDuration,
-  // toggleTheme,   ← 移除：全 App 統一深色，不再需要
-  // applyTheme,    ← 移除
-  // isDarkMode,    ← 移除
-  // themeIcon,     ← 移除
-  generateBackupFilename,
-  normalizeTimestamp,
-} = useDiaryUtils()
+const { formatDuration, generateBackupFilename } = useDiaryUtils()
 
 // 響應式數據
 const statusMessage = ref('')
