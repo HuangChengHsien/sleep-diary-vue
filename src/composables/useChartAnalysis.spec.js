@@ -5,6 +5,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import {
   calculateAgeInMonths,
+  getLogicalDateString,
   processDailySleepData,
   calculateSleepStatistics,
 } from '@/lib/chart-calc'
@@ -50,6 +51,25 @@ describe('calculateAgeInMonths', () => {
   // 注意：實作只用 year+month，忽略 day-of-month
   it('忽略 day-of-month（2025-01-31 → 2026-01-15 仍算 12 個月）', () => {
     expect(calculateAgeInMonths('2025-01-31')).toBe(12)
+  })
+})
+
+describe('getLogicalDateString', () => {
+  it('09:00 之後維持當天', () => {
+    expect(getLogicalDateString(new Date('2026-01-15T09:00:00'))).toBe('2026-01-15')
+    expect(getLogicalDateString(new Date('2026-01-15T13:00:00'))).toBe('2026-01-15')
+    expect(getLogicalDateString(new Date('2026-01-15T23:59:00'))).toBe('2026-01-15')
+  })
+
+  it('09:00 之前歸屬前一天', () => {
+    expect(getLogicalDateString(new Date('2026-01-15T00:00:00'))).toBe('2026-01-14')
+    expect(getLogicalDateString(new Date('2026-01-15T03:30:00'))).toBe('2026-01-14')
+    expect(getLogicalDateString(new Date('2026-01-15T08:59:00'))).toBe('2026-01-14')
+  })
+
+  it('跨月與跨年邊界正確回退', () => {
+    expect(getLogicalDateString(new Date('2026-03-01T02:00:00'))).toBe('2026-02-28')
+    expect(getLogicalDateString(new Date('2026-01-01T02:00:00'))).toBe('2025-12-31')
   })
 })
 
@@ -230,6 +250,66 @@ describe('calculateSleepStatistics', () => {
     expect(stats.avgWakeUpTime).toBe('07:30')
     // latency 只加第一筆（15 分）
     expect(stats.avgSleepLatency).toBe(15)
+    // 兩筆同屬 01-14 這一天 → 4h + 3.75h，不是拆成兩天各自平均
+    expect(stats.avgDailySleep).toBe('7.8')
+  })
+
+  it('就寢時間漂移過午夜：兩晚各 7.5h 不會被併成一天 15h', () => {
+    const records = [
+      // 「1/10 的那一夜」，但入睡已經是 1/11 凌晨
+      {
+        bedTimestamp:   '2026-01-11T00:15:00',
+        sleepTimestamp: '2026-01-11T00:30:00',
+        wakeTimestamp:  '2026-01-11T08:00:00',
+      },
+      // 「1/11 的那一夜」
+      {
+        bedTimestamp:   '2026-01-11T23:15:00',
+        sleepTimestamp: '2026-01-11T23:30:00',
+        wakeTimestamp:  '2026-01-12T07:00:00',
+      },
+    ]
+    const stats = calculateSleepStatistics(records)
+    expect(stats.avgDailySleep).toBe('7.5')
+  })
+
+  it('規律作息：整夜不切午夜，平均不受視窗邊界影響', () => {
+    // 1/10–1/14 每晚 20:00→隔天 07:00（11h）＋ 每天 13:00 小睡 1.5h → 每天 12.5h
+    const records = []
+    for (let d = 10; d <= 14; d++) {
+      const day = `2026-01-${d}`
+      const next = `2026-01-${d + 1}`
+      records.push({
+        bedTimestamp:   `${day}T19:45:00`,
+        sleepTimestamp: `${day}T20:00:00`,
+        wakeTimestamp:  `${next}T07:00:00`,
+      })
+      records.push({
+        bedTimestamp:   `${day}T13:00:00`,
+        sleepTimestamp: `${day}T13:00:00`,
+        wakeTimestamp:  `${day}T14:30:00`,
+      })
+    }
+    const stats = calculateSleepStatistics(records)
+    expect(stats.avgDailySleep).toBe('12.5')
+  })
+
+  it('白天小睡留在自己的日曆日，不會被搬到前一天', () => {
+    const records = [
+      {
+        bedTimestamp:   '2026-01-15T13:00:00',
+        sleepTimestamp: '2026-01-15T13:00:00',
+        wakeTimestamp:  '2026-01-15T14:30:00',
+      },
+      {
+        bedTimestamp:   '2026-01-15T19:45:00',
+        sleepTimestamp: '2026-01-15T20:00:00',
+        wakeTimestamp:  '2026-01-16T06:00:00',
+      },
+    ]
+    const stats = calculateSleepStatistics(records)
+    // 1.5h 小睡 + 10h 夜眠 同屬 01-15 這一天
+    expect(stats.avgDailySleep).toBe('11.5')
   })
 
   it('dateRange 使用排序後的首末 sleepTime', () => {
