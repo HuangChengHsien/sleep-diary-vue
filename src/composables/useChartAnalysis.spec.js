@@ -312,6 +312,90 @@ describe('calculateSleepStatistics', () => {
     expect(stats.avgDailySleep).toBe('11.5')
   })
 
+  it('異常大的入睡耗時照算進平均，但同時回報有幾晚超標', () => {
+    const records = [
+      // 正常：81 分
+      {
+        bedTimestamp:   '2026-01-13T21:45:00',
+        sleepTimestamp: '2026-01-13T23:06:00',
+        wakeTimestamp:  '2026-01-14T07:00:00',
+      },
+      // 異常：上床 19:00 仍屬夜晚，但到 03:00 才入睡 → 480 分
+      {
+        bedTimestamp:   '2026-01-14T19:00:00',
+        sleepTimestamp: '2026-01-15T03:00:00',
+        wakeTimestamp:  '2026-01-15T08:00:00',
+      },
+    ]
+    const stats = calculateSleepStatistics(records)
+    // 兩晚都算進去，沒有被丟掉：(81 + 480) / 2
+    expect(stats.avgSleepLatency).toBe(281)
+    expect(stats.extremeLatencyNights).toBe(1)
+  })
+
+  it('釘住現況：上床時間落在白天的紀錄整晚不計入夜晚統計', () => {
+    // 上下午選錯造成 bedHour=12，落在 [9,18) 白天排除區間。
+    // 這一晚完全不進夜晚統計，也因此不會被 extremeLatencyNights 標記出來。
+    // 這是已知缺口（白天排除本身沒有任何揭露），尚未處理；先釘住行為避免無聲改變。
+    const records = [
+      {
+        bedTimestamp:   '2026-01-14T12:55:00',
+        sleepTimestamp: '2026-01-15T00:44:00',
+        wakeTimestamp:  '2026-01-15T07:56:00',
+      },
+    ]
+    const stats = calculateSleepStatistics(records)
+    expect(stats.totalRecords).toBe(1)
+    expect(stats.avgSleepLatency).toBe(0)
+    expect(stats.extremeLatencyNights).toBe(0)
+    expect(stats.avgNightBedtime).toBe('--:--')
+  })
+
+  it('全部正常時 extremeLatencyNights 為 0', () => {
+    const records = [
+      {
+        bedTimestamp:   '2026-01-14T21:45:00',
+        sleepTimestamp: '2026-01-14T22:00:00',
+        wakeTimestamp:  '2026-01-15T06:00:00',
+      },
+    ]
+    expect(calculateSleepStatistics(records).extremeLatencyNights).toBe(0)
+  })
+
+  it('剛好 180 分不算超標，181 分才算', () => {
+    const at = calculateSleepStatistics([
+      {
+        bedTimestamp:   '2026-01-14T21:00:00',
+        sleepTimestamp: '2026-01-15T00:00:00',
+        wakeTimestamp:  '2026-01-15T07:00:00',
+      },
+    ])
+    expect(at.avgSleepLatency).toBe(180)
+    expect(at.extremeLatencyNights).toBe(0)
+
+    const over = calculateSleepStatistics([
+      {
+        bedTimestamp:   '2026-01-14T21:00:00',
+        sleepTimestamp: '2026-01-15T00:01:00',
+        wakeTimestamp:  '2026-01-15T07:00:00',
+      },
+    ])
+    expect(over.extremeLatencyNights).toBe(1)
+  })
+
+  it('空資料的回傳也帶有 extremeLatencyNights', () => {
+    expect(calculateSleepStatistics([]).extremeLatencyNights).toBe(0)
+    // 只有白天午睡 → 沒有任何邏輯夜晚
+    const naps = [
+      {
+        bedTimestamp:   '2026-01-15T13:00:00',
+        sleepTimestamp: '2026-01-15T13:00:00',
+        wakeTimestamp:  '2026-01-15T15:00:00',
+      },
+    ]
+    expect(calculateSleepStatistics(naps).extremeLatencyNights).toBe(0)
+  })
+
   it('dateRange 使用排序後的首末 sleepTime', () => {
     const records = [
       {

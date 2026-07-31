@@ -6,6 +6,8 @@ import {
   getTotalSleepRating,
   getSleepOnsetRating,
 } from './sleep-references.js'
+// 與存檔前提示所用的是同一個門檻（見 sleep-record-input.js）
+import { MAX_PLAUSIBLE_LATENCY_MINUTES } from './sleep-record-input.js'
 
 // ── 基本工具 ──────────────────────────────────────
 
@@ -61,6 +63,7 @@ export const calculateSleepStatistics = (sleepData, baby) => {
       totalRecords: 0,
       avgDailySleep: '0.0',
       avgSleepLatency: 0,
+      extremeLatencyNights: 0,
       avgNightBedtime: '--:--',
       avgSleepOnset: '--:--',
       avgWakeUpTime: '--:--',
@@ -83,6 +86,7 @@ export const calculateSleepStatistics = (sleepData, baby) => {
       totalRecords: 0,
       avgDailySleep: '0.0',
       avgSleepLatency: 0,
+      extremeLatencyNights: 0,
       avgNightBedtime: '--:--',
       avgSleepOnset: '--:--',
       avgWakeUpTime: '--:--',
@@ -118,8 +122,8 @@ export const calculateSleepStatistics = (sleepData, baby) => {
         firstBedtime: r.bedTime,
         firstSleepTime: r.sleepTime,
         lastWakeTime: r.wakeTime,
-        latencySum: (r.sleepTime - r.bedTime) / 60000,
-        latencyCount: 1,
+        // 一晚只取第一次就寢的入睡耗時，後續回床上的記錄不計入
+        latencyMinutes: (r.sleepTime - r.bedTime) / 60000,
       }
     } else {
       logicalNights[logicalDateStr].lastWakeTime = r.wakeTime
@@ -132,6 +136,7 @@ export const calculateSleepStatistics = (sleepData, baby) => {
       totalRecords: records.length,
       avgDailySleep: avgDailySleep.toFixed(1),
       avgSleepLatency: 0,
+      extremeLatencyNights: 0,
       avgNightBedtime: '--:--',
       avgSleepOnset: '--:--',
       avgWakeUpTime: '--:--',
@@ -139,9 +144,21 @@ export const calculateSleepStatistics = (sleepData, baby) => {
     }
   }
 
-  // 計算平均入睡延遲
-  const totalLatency = nightsArray.reduce((sum, night) => sum + night.latencySum, 0)
+  // 計算平均入睡延遲。
+  //
+  // 這裡刻意「不」排除極端值：丟掉資料會讓平均看起來比實際好，而且無跡可循。
+  // 但平均值本身也藏不住問題 —— 圖表上的離群點看得見，混進平均裡的看不見。
+  // 所以照算全部夜晚，另外回報有幾晚是極端值，交給畫面揭露。
+  //
+  // 注意這裡只陳述「有極端值」，不判斷成因。超過三小時可能是輸入時上下午選錯，
+  // 也可能是真的躺了三小時睡不著（見 lib/charts/latency.js），
+  // 兩者對「這個平均值不代表典型狀況」的結論是一樣的。
+  const totalLatency = nightsArray.reduce((sum, night) => sum + night.latencyMinutes, 0)
   const avgSleepLatency = Math.round(totalLatency / nightsArray.length)
+
+  const extremeLatencyNights = nightsArray.filter(
+    (night) => night.latencyMinutes > MAX_PLAUSIBLE_LATENCY_MINUTES,
+  ).length
 
   // 計算平均時間的輔助函數
   const toTimeValue = (date) =>
@@ -171,6 +188,7 @@ export const calculateSleepStatistics = (sleepData, baby) => {
     totalRecords: records.length,
     avgDailySleep: avgDailySleep.toFixed(1),
     avgSleepLatency: avgSleepLatency >= 0 ? avgSleepLatency : 0,
+    extremeLatencyNights,
     avgNightBedtime,
     avgSleepOnset,
     avgWakeUpTime,

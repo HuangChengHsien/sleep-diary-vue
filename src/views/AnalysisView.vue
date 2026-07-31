@@ -57,6 +57,10 @@
           <div class="stat-value">{{ filteredStatistics.avgSleepLatency }}</div>
           <div class="stat-label">平均要多久才會入睡</div>
           <div class="stat-subtitle">分鐘 (僅限夜晚首次就寢)</div>
+          <div v-if="filteredStatistics.extremeLatencyNights > 0" class="stat-caveat">
+            ⚠️ 含 {{ filteredStatistics.extremeLatencyNights }} 晚超過 {{ extremeLatencyHours }} 小時，
+            平均值已被拉高，不代表典型狀況
+          </div>
         </div>
 
         <div class="stat-card">
@@ -293,6 +297,7 @@ import {
   calculateAgeInMonths,
 } from '@/lib/chart-calc'
 import { DARK_THEME } from '@/lib/chart-theme'
+import { MAX_PLAUSIBLE_LATENCY_MINUTES } from '@/lib/sleep-record-input'
 import {
   getLatencyRating,
   getTotalSleepRating,
@@ -420,6 +425,9 @@ const filteredStatistics = computed(() => {
     : null
   return calculateSleepStatistics(filteredSleepRecords.value, babyData)
 })
+
+// 提示文案裡的「超過 N 小時」，與 chart-calc 判定用的門檻同源
+const extremeLatencyHours = Math.round(MAX_PLAUSIBLE_LATENCY_MINUTES / 60)
 
 // 原有的計算屬性
 const currentBabyDisplay = computed(() => {
@@ -923,6 +931,17 @@ onUnmounted(() => {
   font-family: 'SF Mono', Menlo, monospace;
 }
 
+/* 數值可信度的提醒，不是評級 —— 用暖色與評級邊框區隔 */
+.stat-caveat {
+  margin-top: 8px;
+  padding: 6px 8px;
+  font-size: 11px; line-height: 1.5;
+  color: #D4B36A;
+  background: rgba(212,179,106,0.08);
+  border: 1px solid rgba(212,179,106,0.18);
+  border-radius: 6px;
+}
+
 /* ── Legend ───────────────────────────────────────── */
 .legend-container {
   max-width: 1200px; margin: 16px auto 0;
@@ -1187,6 +1206,13 @@ canvas {
   .stat-value { color: #111 !important; }
   .stat-label { color: #444 !important; }
   .stat-subtitle { color: #666 !important; }
+
+  /* 列印給醫師看的報告，資料可信度的提醒必須跟著印出來 */
+  .stat-caveat {
+    color: #8a6d1f !important;
+    background: #fdf6e3 !important;
+    border-color: #d9c48a !important;
+  }
 
   .legend-container,
   .daily-list-container,
