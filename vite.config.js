@@ -82,4 +82,9 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'),
     },
   },
+  // --- Vitest ---
+  test: {
+    environment: 'happy-dom',
+    include: ['src/**/*.spec.js'],
+  },
 })
