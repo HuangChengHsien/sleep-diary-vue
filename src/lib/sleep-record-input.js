@@ -1,9 +1,10 @@
 // src/lib/sleep-record-input.js
 // 手動輸入睡眠紀錄時的時間組裝與合理性檢查。純函式，與 Vue / DOM 無關。
 
-// 入睡耗時的合理上限（分鐘）。
-// 入睡耗時圖表（lib/charts/latency.js）與時間軸的「入睡準備」區段（lib/charts/timeline.js）
-// 早就用這個門檻過濾資料，這裡把它抽成單一來源，讓輸入檢查與圖表用同一個標準。
+// 入睡耗時超過這個分鐘數就在存檔前問一次。
+//
+// 只用於輸入檢查，不用於圖表。圖表一律照畫，因為長到異常的入睡耗時可能是
+// 輸入錯誤，也可能是真的睡不著，兩種都需要被看見（見 lib/charts/latency.js）。
 export const MAX_PLAUSIBLE_LATENCY_MINUTES = 180
 
 // 由「日期 + 三個 HH:mm」組出三個 Date，並套用跨日修正：

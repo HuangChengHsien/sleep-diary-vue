@@ -113,7 +113,7 @@ describe('checkSleepRecordInput', () => {
     expect(msg).toContain('相隔 12 小時。')
   })
 
-  it('門檻常數與圖表過濾用的是同一個值', () => {
+  it('提示門檻為 180 分鐘', () => {
     expect(MAX_PLAUSIBLE_LATENCY_MINUTES).toBe(180)
   })
 })

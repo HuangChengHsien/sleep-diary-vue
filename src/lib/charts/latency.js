@@ -1,13 +1,14 @@
 // src/lib/charts/latency.js
-// 入睡耗時趨勢圖（僅夜晚睡眠、0–180 分鐘的合理值，最近 28 筆），
-// 疊上理想 / 可接受範圍的參考色帶。
+// 入睡耗時趨勢圖（僅夜晚睡眠，最近 28 筆），疊上理想 / 可接受範圍的參考色帶。
+//
+// 不對耗時設上限：入睡困難的夜晚正是這張圖存在的理由，把它們濾掉會讓趨勢
+// 看起來比實際好。異常大的值（例如輸入時上下午選錯）也照畫，讓它自己現形。
 
 import { Chart } from './chart-setup.js'
 import { chartManager } from './chart-manager.js'
 import { drawNoDataMessage } from './no-data.js'
 import { normalizeTimestamp, getLocalDateString } from '@/lib/chart-calc.js'
 import { getLatencyChartBands } from '@/lib/sleep-references.js'
-import { MAX_PLAUSIBLE_LATENCY_MINUTES } from '@/lib/sleep-record-input.js'
 
 export const renderLatencyChart = (sleepData) => {
   const canvas = document.getElementById('latencyCanvas')
@@ -24,15 +25,12 @@ export const renderLatencyChart = (sleepData) => {
         // 只計算夜晚睡眠（18:00 - 9:00）
         if (sleepTime.getHours() >= 18 || sleepTime.getHours() < 9) {
           const latencyMinutes = (sleepTime - bedTime) / 60000
-          // 只考慮合理的入睡時間（0-180分鐘）
-          if (latencyMinutes >= 0 && latencyMinutes <= MAX_PLAUSIBLE_LATENCY_MINUTES) {
-            return {
-              date: getLocalDateString(sleepTime),
-              latency: Math.round(latencyMinutes),
-              timestamp: sleepTime,
-              // 創建唯一的x軸標籤：日期 + 時間
-              uniqueLabel: `${getLocalDateString(sleepTime)} ${sleepTime.getHours().toString().padStart(2, '0')}:${sleepTime.getMinutes().toString().padStart(2, '0')}`,
-            }
+          return {
+            date: getLocalDateString(sleepTime),
+            latency: Math.round(latencyMinutes),
+            timestamp: sleepTime,
+            // 創建唯一的x軸標籤：日期 + 時間
+            uniqueLabel: `${getLocalDateString(sleepTime)} ${sleepTime.getHours().toString().padStart(2, '0')}:${sleepTime.getMinutes().toString().padStart(2, '0')}`,
           }
         }
       }
@@ -54,6 +52,12 @@ export const renderLatencyChart = (sleepData) => {
 
   // 取得色塊的 y 軸範圍
   const latencyBands = getLatencyChartBands()
+
+  // 維持每 10 分鐘一格，但極端值會讓格線多到看不清楚（11 小時 = 70 條），
+  // 超過上限就交給 Chart.js 自己挑刻度。
+  const maxLatency = Math.max(...nightRecordsWithLatency.map((r) => r.latency))
+  const MAX_GRIDLINES = 20
+  const latencyStepSize = maxLatency / 10 <= MAX_GRIDLINES ? 10 : undefined
 
   const newChart = new Chart(ctx, {
     type: 'line',
@@ -86,7 +90,7 @@ export const renderLatencyChart = (sleepData) => {
             text: '分鐘',
           },
           ticks: {
-            stepSize: 10,
+            stepSize: latencyStepSize,
             callback: function (value) {
               return value + '分'
             },
