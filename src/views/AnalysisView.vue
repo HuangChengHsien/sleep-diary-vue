@@ -302,7 +302,6 @@ const {
   babyList,
   sleepRecords,
   eventRecords,
-  isLoading: babyLoading,
   loadAllBabies,
   selectBaby,
 } = useBabyManagement()
@@ -314,9 +313,7 @@ const {
   renderDailyDurationChart,
   destroyChart,
   calculateAgeInMonths,
-  applyChartTheme,
   DARK_THEME,
-  LIGHT_THEME,
 } = useChartAnalysis()
 
 // 響應式數據
@@ -430,17 +427,6 @@ const filteredStatistics = computed(() => {
 const currentBabyDisplay = computed(() => {
   if (!currentBaby.value) return '睡眠數據分析'
   return `睡眠數據分析 - ${currentBaby.value.name}`
-})
-
-const dailySleepData = computed(() => {
-  if (!sleepRecords.value || sleepRecords.value.length === 0) {
-    return []
-  }
-  return processDailySleepData(sleepRecords.value)
-})
-
-const reversedDailySleepData = computed(() => {
-  return [...dailySleepData.value].reverse()
 })
 
 const chartTitle = computed(() => {
@@ -663,7 +649,9 @@ const downloadChart = () => {
 
   try {
     const babyName = currentBaby.value?.name || '個案'
-    const chartTypeName = chartTitle.value.replace(/[📊💤📈🌙⏱️📅]/g, '').trim()
+    const chartTypeName = ['💤', '📊', '📈', '🌙', '⏱️', '📅']
+      .reduce((s, emoji) => s.replaceAll(emoji, ''), chartTitle.value)
+      .trim()
     const currentDate = new Date().toISOString().split('T')[0]
     const filterSuffix =
       chartFilter.value.dayRange === 'all' ? '全部' : `${chartFilter.value.dayRange}天`
@@ -683,7 +671,7 @@ const downloadChart = () => {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-  } catch (error) {
+  } catch {
     alert('下載圖表失敗，請稍後再試')
   }
 }

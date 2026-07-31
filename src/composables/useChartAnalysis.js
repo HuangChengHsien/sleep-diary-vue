@@ -116,7 +116,7 @@ class ChartMemoryManager {
       if (oldChart && typeof oldChart.destroy === 'function') {
         try {
           oldChart.destroy()
-        } catch (error) {
+        } catch {
           // 靜默處理錯誤
         }
       }
@@ -129,7 +129,7 @@ class ChartMemoryManager {
     if (chart && typeof chart.destroy === 'function') {
       try {
         chart.destroy()
-      } catch (error) {
+      } catch {
         // 靜默處理錯誤
       }
     }
@@ -137,11 +137,11 @@ class ChartMemoryManager {
   }
 
   destroyAll() {
-    for (const [type, chart] of this.chartInstances) {
+    for (const chart of this.chartInstances.values()) {
       if (chart && typeof chart.destroy === 'function') {
         try {
           chart.destroy()
-        } catch (error) {
+        } catch {
           // 靜默處理錯誤
         }
       }
@@ -431,10 +431,11 @@ export function useChartAnalysis() {
         case 'duration':
           renderDurationChart(sleepData)
           break
-        case 'dailyDuration':
+        case 'dailyDuration': {
           const dailyData = processDailySleepData(sleepData)
           renderDailyDurationChart(dailyData, baby)
           break
+        }
         case 'bedtime':
           renderBedtimeChart(sleepData)
           break
@@ -444,15 +445,16 @@ export function useChartAnalysis() {
         case 'wakeCount':
           renderWakeCountChart(sleepData)
           break
-        case 'weekly':
+        case 'weekly': {
           const weeklyData = processDailySleepData(sleepData)
           renderWeeklyChart(weeklyData)
           break
+        }
         default:
           // 未實現的圖表類型
           break
       }
-    } catch (error) {
+    } catch {
       // 靜默處理錯誤
     } finally {
       isLoading.value = false
@@ -562,7 +564,7 @@ export function useChartAnalysis() {
     if (showEvents && eventData && eventData.length > 0) {
       const dateToIndexMap = new Map(allDates.map((date, index) => [date, index]))
 
-      eventData.forEach((event, index) => {
+      eventData.forEach((event) => {
         if (!event.dateTime) {
           return
         }
@@ -665,7 +667,7 @@ export function useChartAnalysis() {
             const yScale = chart.scales.y
             const xScale = chart.scales.x
 
-            eventMarkers.forEach((marker, index) => {
+            eventMarkers.forEach((marker) => {
               // 計算事件標記的位置
               const xPos = xScale.getPixelForValue(marker.x)
               const yPos = yScale.getPixelForValue(marker.yIndex)
@@ -1135,11 +1137,6 @@ export function useChartAnalysis() {
     chartManager.setChart('dailyDuration', newChart)
   }
 
-  // 🆕 新增：包裝函數，方便從 Vue 組件中調用
-  const renderDailyDurationChartWithFilter = (dailyData, baby, chartFilter) => {
-    const dayRange = chartFilter?.dayRange || '14'
-    return renderDailyDurationChart(dailyData, baby, dayRange)
-  }
   //就寢時間
   const renderBedtimeChart = (sleepData) => {
     const canvas = document.getElementById('bedtimeCanvas')

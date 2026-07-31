@@ -160,7 +160,7 @@ export function useBabyManagement() {
         sleepLog: records.sleepRecords || [],
         eventLog: records.eventRecords || [],
       }
-    } catch (err) {
+    } catch {
       return { sleepLog: [], eventLog: [] }
     }
   }

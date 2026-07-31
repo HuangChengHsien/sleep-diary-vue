@@ -87,7 +87,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useSleepTracking } from '@/composables/useSleepTracking'
 import { useDiaryUtils } from '@/composables/useDiaryUtils'
 
@@ -106,7 +106,6 @@ const emit = defineEmits(['update-records', 'show-message'])
 
 const { getCurrentTime } = useDiaryUtils()
 const {
-  currentSleepSession,
   sleepStatus,
   buttonStates,
   checkCurrentSleepStatus,
