@@ -23,6 +23,21 @@ export const getLocalDateString = (date) => {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
+// 「邏輯日」：以早上 9 點為分界，凌晨 0–9 點的睡眠歸屬前一天那一夜。
+//
+// 統計卡的所有欄位都用這個規則分桶，同一晚的資料才不會因為跨過午夜就被拆成兩天
+// ——21:00 上床和隔天 01:00 才睡著，講的是同一個晚上。
+//
+// 注意：這與 processDailySleepData 的午夜切分是「刻意」不同的兩套規則。
+// 那邊回答的是「某個日曆日實際睡了多少」（明細表、每日圖表），這裡回答的是
+// 「平均一晚睡多久」，不切開整夜才不會被統計視窗邊界的半夜拉低平均。
+export const getLogicalDateString = (date) => {
+  if (date.getHours() >= 9) return getLocalDateString(date)
+  const shifted = new Date(date)
+  shifted.setDate(shifted.getDate() - 1)
+  return getLocalDateString(shifted)
+}
+
 // ── 月齡計算 ──────────────────────────────────────
 // 只用 year+month 相減，忽略 day-of-month（見 useChartAnalysis.spec.js 中的釘住測試）
 
@@ -75,11 +90,11 @@ export const calculateSleepStatistics = (sleepData, baby) => {
     }
   }
 
-  // 計算每日總睡眠時間
+  // 計算每日總睡眠時間（含小睡）。整段時長掛在入睡當下所屬的「邏輯日」，不切午夜。
   const dailyTotals = {}
   records.forEach((r) => {
     const durationHours = (r.wakeTime - r.sleepTime) / 3600000
-    const dateKey = getLocalDateString(r.sleepTime)
+    const dateKey = getLogicalDateString(r.sleepTime)
     dailyTotals[dateKey] = (dailyTotals[dateKey] || 0) + durationHours
   })
 
@@ -96,12 +111,7 @@ export const calculateSleepStatistics = (sleepData, baby) => {
     const bedHour = r.bedTime.getHours()
     if (bedHour >= 9 && bedHour < 18) return // 排除白天睡眠
 
-    let logicalDateStr = getLocalDateString(r.bedTime)
-    if (bedHour < 9) {
-      const logicalDate = new Date(r.bedTime)
-      logicalDate.setDate(logicalDate.getDate() - 1)
-      logicalDateStr = getLocalDateString(logicalDate)
-    }
+    const logicalDateStr = getLogicalDateString(r.bedTime)
 
     if (!logicalNights[logicalDateStr]) {
       logicalNights[logicalDateStr] = {
