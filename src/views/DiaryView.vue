@@ -151,6 +151,8 @@
         :records="sleepRecords"
         @edit-record="handleEditSleepRecord"
         @delete-record="handleDeleteSleepRecord"
+        @toggle-exclude="handleToggleExclude"
+        @exclude-range="handleExcludeRange"
       />
 
       <!-- 事件追蹤 -->
@@ -266,7 +268,8 @@ const {
   removeEventRecord,
 } = useEventTracking()
 
-const { removeSleepRecord } = useSleepTracking()
+const { removeSleepRecord, setSleepRecordExcluded, setSleepRecordsExcludedInRange } =
+  useSleepTracking()
 
 const { formatDuration, generateBackupFilename } = useDiaryUtils()
 
@@ -345,6 +348,34 @@ const handleDeleteSleepRecord = async (record) => {
     showMessage('刪除失敗: ' + error.message, 'error')
   }
 }
+const handleToggleExclude = async ({ record, excluded }) => {
+  try {
+    const message = await setSleepRecordExcluded(currentBabyId.value, record, excluded, () =>
+      reloadCurrentBabyRecords(),
+    )
+    showMessage(message, 'success')
+  } catch (error) {
+    showMessage('操作失敗: ' + error.message, 'error')
+  }
+}
+
+const handleExcludeRange = async ({ startDate, endDate, excluded }) => {
+  try {
+    showMessage('處理中...', 'info')
+    const message = await setSleepRecordsExcludedInRange(
+      currentBabyId.value,
+      sleepRecords.value,
+      startDate,
+      endDate,
+      excluded,
+      () => reloadCurrentBabyRecords(),
+    )
+    showMessage(message, 'success')
+  } catch (error) {
+    showMessage('操作失敗: ' + error.message, 'error')
+  }
+}
+
 const handleSleepRecordUpdated = async () => {
   editingSleepRecord.value = null
   await reloadCurrentBabyRecords()

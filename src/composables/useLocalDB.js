@@ -119,6 +119,15 @@ export function useLocalDB() {
 
   // ── 睡眠記錄 ─────────────────────────────────────
 
+  const getSleepRecord = async (recordId) => {
+    try {
+      return (await db.sleepRecords.get(recordId)) || null
+    } catch (err) {
+      error.value = err.message
+      return null
+    }
+  }
+
   const saveSleepRecord = async (babyId, record) => {
     try {
       isLoading.value = true
@@ -216,6 +225,7 @@ export function useLocalDB() {
     saveBaby,
     deleteBaby,
     loadBabyRecords,
+    getSleepRecord,
     saveSleepRecord,
     saveEventRecord,
     deleteSleepRecord,

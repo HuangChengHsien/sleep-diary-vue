@@ -25,6 +25,25 @@
       </button>
     </div>
 
+    <!-- 生病、旅行等不具代表性的期間：整段排除於分析之外 -->
+    <div class="exclude-range">
+      <span class="exclude-range-label">不列入分析的期間</span>
+      <div class="exclude-range-controls">
+        <input type="date" v-model="excludeStart" aria-label="排除起始日期" />
+        <span class="exclude-range-sep">～</span>
+        <input type="date" v-model="excludeEnd" aria-label="排除結束日期" />
+        <button @click="applyRange(true)" class="exclude-btn btn-small" :disabled="!rangeReady">
+          排除
+        </button>
+        <button @click="applyRange(false)" class="restore-btn btn-small" :disabled="!rangeReady">
+          恢復
+        </button>
+      </div>
+      <span v-if="rangeReady" class="exclude-range-hint">
+        將影響 {{ recordsInSelectedRange }} 筆記錄
+      </span>
+    </div>
+
     <div class="table-container">
       <!-- 修正：正確使用響應式包裝器 -->
       <div class="table-responsive-wrapper">
@@ -39,16 +58,21 @@
               <th class="col-duration">總睡眠時間</th>
               <th class="col-count hide-mobile">夜間醒來次數</th>
               <th class="col-notes hide-mobile">備註</th>
+              <th class="col-analysis hide-mobile">列入分析</th>
               <th class="col-actions">操作</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="formattedRecords.length === 0">
-              <td colspan="9" class="no-data">
+              <td colspan="10" class="no-data">
                 {{ getNoDataMessage() }}
               </td>
             </tr>
-            <tr v-for="record in formattedRecords" :key="record.id">
+            <tr
+              v-for="record in formattedRecords"
+              :key="record.id"
+              :class="{ excluded: record.isExcluded }"
+            >
               <td class="col-date">{{ record.date }}</td>
               <td class="col-time">{{ record.bedtime }}</td>
               <td class="col-time">{{ record.sleepTime }}</td>
@@ -57,6 +81,17 @@
               <td class="col-duration">{{ record.totalSleep }}</td>
               <td class="col-count hide-mobile">{{ record.wakeCount }}次</td>
               <td class="col-notes hide-mobile">{{ record.notes }}</td>
+              <td class="col-analysis hide-mobile">
+                <button
+                  @click="handleToggleExclude(record)"
+                  class="toggle-exclude-btn btn-small"
+                  :class="{ off: record.isExcluded }"
+                  :disabled="!record.id"
+                  :title="record.isExcluded ? '目前不列入分析，點擊恢復' : '點擊排除於分析之外'"
+                >
+                  {{ record.isExcluded ? '已排除' : '計入' }}
+                </button>
+              </td>
               <td class="col-actions">
                 <button
                   @click="handleEdit(record)"
@@ -91,6 +126,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useSleepTracking } from '@/composables/useSleepTracking'
+import { isExcludedFromAnalysis, recordsInDateRange } from '@/lib/record-exclusion'
 
 const props = defineProps({
   records: {
@@ -99,7 +135,13 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['edit-record', 'delete-record', 'filter-change'])
+const emit = defineEmits([
+  'edit-record',
+  'delete-record',
+  'filter-change',
+  'toggle-exclude',
+  'exclude-range',
+])
 
 const { formatSleepRecordForDisplay } = useSleepTracking()
 
@@ -138,9 +180,38 @@ const filterRecords = (records, filter) => {
 const formattedRecords = computed(() => {
   const filteredRecords = filterRecords(props.records, currentFilter.value)
   return filteredRecords
-    .map((record) => formatSleepRecordForDisplay(record))
+    .map((record) => ({
+      ...formatSleepRecordForDisplay(record),
+      isExcluded: isExcludedFromAnalysis(record),
+    }))
     .sort((a, b) => new Date(b.date) - new Date(a.date)) // 最新的在前
 })
+
+// 區間排除
+const excludeStart = ref('')
+const excludeEnd = ref('')
+
+const rangeReady = computed(() => Boolean(excludeStart.value && excludeEnd.value))
+
+const recordsInSelectedRange = computed(() =>
+  rangeReady.value
+    ? recordsInDateRange(props.records, excludeStart.value, excludeEnd.value).length
+    : 0,
+)
+
+const applyRange = (excluded) => {
+  if (!rangeReady.value) return
+  emit('exclude-range', {
+    startDate: excludeStart.value,
+    endDate: excludeEnd.value,
+    excluded,
+  })
+}
+
+const handleToggleExclude = (record) => {
+  const original = record.originalRecord ?? props.records.find((r) => r.id === record.id)
+  if (original) emit('toggle-exclude', { record: original, excluded: !record.isExcluded })
+}
 
 // 方法
 const setFilter = (filter) => {
@@ -311,7 +382,87 @@ table tr:hover td {
   background: rgba(241,237,224,0.04);
 }
 
+/* ── 區間排除 ─────────────────────────────────────── */
+.exclude-range {
+  display: flex; align-items: center; gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: rgba(241,237,224,0.03);
+  border: 1px solid rgba(241,237,224,0.08);
+  border-radius: 10px;
+}
+
+.exclude-range-label {
+  font-size: 12px; color: rgba(241,237,224,0.55);
+}
+
+.exclude-range-controls {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+
+.exclude-range-controls input[type='date'] {
+  background: #1A2340;
+  color: #F1EDE0;
+  border: 1px solid rgba(241,237,224,0.12);
+  border-radius: 8px;
+  padding: 6px 10px;
+  min-height: 36px;
+  font-size: 14px; font-family: inherit;
+}
+
+.exclude-range-sep { color: rgba(241,237,224,0.35); font-size: 12px; }
+
+.exclude-range-hint {
+  font-size: 11px; color: rgba(241,237,224,0.4);
+  font-family: 'SF Mono', Menlo, monospace;
+}
+
+.exclude-btn {
+  background: rgba(212,179,106,0.15);
+  color: #D4B36A;
+  border: 1px solid rgba(212,179,106,0.2);
+}
+
+.restore-btn {
+  background: rgba(159,212,212,0.12);
+  color: #9FD4D4;
+  border: 1px solid rgba(159,212,212,0.2);
+}
+
+.exclude-btn:hover:not(:disabled),
+.restore-btn:hover:not(:disabled) { opacity: 0.8; }
+
+/* 被排除的列：淡化但仍可讀，必須看得到才能恢復 */
+table tr.excluded td {
+  opacity: 0.45;
+  text-decoration: line-through;
+  text-decoration-color: rgba(241,237,224,0.35);
+}
+
+table tr.excluded td.col-analysis,
+table tr.excluded td.col-actions {
+  opacity: 1;
+  text-decoration: none;
+}
+
+.toggle-exclude-btn {
+  background: rgba(159,212,212,0.12);
+  color: #9FD4D4;
+  border: 1px solid rgba(159,212,212,0.2);
+  min-width: 52px;
+}
+
+.toggle-exclude-btn.off {
+  background: rgba(241,237,224,0.06);
+  color: rgba(241,237,224,0.45);
+  border-color: rgba(241,237,224,0.12);
+}
+
+.toggle-exclude-btn:hover:not(:disabled) { opacity: 0.8; }
+
 /* ── Column widths ────────────────────────────────── */
+.col-analysis { width: 9%; }
 .col-date     { width: 12%; }
 .col-time     { width: 10%; }
 .col-duration { width: 12%; }
