@@ -42,6 +42,22 @@
       <span v-if="rangeReady" class="exclude-range-hint">
         將影響 {{ recordsInSelectedRange }} 筆記錄
       </span>
+
+      <!-- 排除是逐筆存的，這裡把它反推成期間，否則排掉幾段之後就認不出來也無法單獨恢復 -->
+      <div v-if="excludedPeriodList.length > 0" class="excluded-periods">
+        <span class="excluded-periods-label">目前排除中：</span>
+        <span v-for="period in excludedPeriodList" :key="period.startDate" class="excluded-period">
+          {{ formatPeriodLabel(period) }}
+          <small>{{ period.recordCount }} 筆</small>
+          <button
+            @click="restorePeriod(period)"
+            class="restore-period-btn"
+            :title="`恢復 ${period.startDate} ~ ${period.endDate}`"
+          >
+            ✕
+          </button>
+        </span>
+      </div>
     </div>
 
     <div class="table-container">
@@ -126,7 +142,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useSleepTracking } from '@/composables/useSleepTracking'
-import { isExcludedFromAnalysis, recordsInDateRange } from '@/lib/record-exclusion'
+import {
+  isExcludedFromAnalysis,
+  recordsInDateRange,
+  excludedPeriods,
+  formatPeriodLabel,
+} from '@/lib/record-exclusion'
 
 const props = defineProps({
   records: {
@@ -198,6 +219,16 @@ const recordsInSelectedRange = computed(() =>
     ? recordsInDateRange(props.records, excludeStart.value, excludeEnd.value).length
     : 0,
 )
+
+const excludedPeriodList = computed(() => excludedPeriods(props.records))
+
+const restorePeriod = (period) => {
+  emit('exclude-range', {
+    startDate: period.startDate,
+    endDate: period.endDate,
+    excluded: false,
+  })
+}
 
 const applyRange = (excluded) => {
   if (!rangeReady.value) return
@@ -412,6 +443,47 @@ table tr:hover td {
 }
 
 .exclude-range-sep { color: rgba(241,237,224,0.35); font-size: 12px; }
+
+.excluded-periods {
+  display: flex; align-items: center; gap: 6px;
+  flex-wrap: wrap;
+  width: 100%;
+  padding-top: 8px;
+  border-top: 1px solid rgba(241,237,224,0.07);
+}
+
+.excluded-periods-label {
+  font-size: 11px; color: rgba(241,237,224,0.4);
+}
+
+.excluded-period {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 4px 3px 10px;
+  border-radius: 100px;
+  background: rgba(212,179,106,0.1);
+  border: 1px solid rgba(212,179,106,0.2);
+  color: #D4B36A;
+  font-size: 12px;
+  font-family: 'SF Mono', Menlo, monospace;
+}
+
+.excluded-period small {
+  color: rgba(212,179,106,0.6);
+  font-size: 10px;
+}
+
+.restore-period-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px;
+  padding: 0; margin: 0;
+  border: none; border-radius: 50%;
+  background: rgba(212,179,106,0.15);
+  color: #D4B36A;
+  font-size: 11px; line-height: 1; cursor: pointer;
+  font-family: inherit;
+}
+
+.restore-period-btn:hover { background: rgba(212,179,106,0.3); }
 
 .exclude-range-hint {
   font-size: 11px; color: rgba(241,237,224,0.4);

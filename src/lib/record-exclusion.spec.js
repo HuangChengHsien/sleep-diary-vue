@@ -7,6 +7,8 @@ import {
   excludedRecords,
   recordDateString,
   recordsInDateRange,
+  excludedPeriods,
+  formatPeriodLabel,
 } from './record-exclusion.js'
 
 describe('isExcludedFromAnalysis', () => {
@@ -103,5 +105,100 @@ describe('recordsInDateRange', () => {
   it('缺少起訖日期時回傳空陣列', () => {
     expect(recordsInDateRange(records, '', '2026-07-30')).toEqual([])
     expect(recordsInDateRange(records, '2026-07-30', '')).toEqual([])
+  })
+})
+
+describe('excludedPeriods', () => {
+  const ex = (date, id) => ({ id, date, excludedFromAnalysis: true })
+
+  it('沒有排除紀錄時回傳空陣列', () => {
+    expect(excludedPeriods([{ id: 'a', date: '2026-08-01' }])).toEqual([])
+    expect(excludedPeriods([])).toEqual([])
+    expect(excludedPeriods(null)).toEqual([])
+  })
+
+  it('單一日期成為一段', () => {
+    expect(excludedPeriods([ex('2026-08-02', 'a')])).toEqual([
+      { startDate: '2026-08-02', endDate: '2026-08-02', dayCount: 1, recordCount: 1 },
+    ])
+  })
+
+  it('連續日期歸併成一段', () => {
+    const periods = excludedPeriods([
+      ex('2026-08-02', 'a'),
+      ex('2026-08-03', 'b'),
+      ex('2026-08-04', 'c'),
+    ])
+    expect(periods).toEqual([
+      { startDate: '2026-08-02', endDate: '2026-08-04', dayCount: 3, recordCount: 3 },
+    ])
+  })
+
+  it('不連續日期分成多段（三個週末出差的情境）', () => {
+    const periods = excludedPeriods([
+      ex('2026-08-01', 'a'), ex('2026-08-02', 'b'),
+      ex('2026-08-08', 'c'), ex('2026-08-09', 'd'),
+      ex('2026-08-15', 'e'), ex('2026-08-16', 'f'),
+    ])
+    expect(periods.map((p) => `${p.startDate}~${p.endDate}`)).toEqual([
+      '2026-08-01~2026-08-02',
+      '2026-08-08~2026-08-09',
+      '2026-08-15~2026-08-16',
+    ])
+    expect(periods.every((p) => p.dayCount === 2 && p.recordCount === 2)).toBe(true)
+  })
+
+  it('同一天多筆合計在 recordCount，不影響 dayCount', () => {
+    const periods = excludedPeriods([
+      ex('2026-08-02', 'a'), ex('2026-08-02', 'b'), ex('2026-08-02', 'c'),
+    ])
+    expect(periods).toEqual([
+      { startDate: '2026-08-02', endDate: '2026-08-02', dayCount: 1, recordCount: 3 },
+    ])
+  })
+
+  it('輸入順序不影響歸併結果', () => {
+    const periods = excludedPeriods([
+      ex('2026-08-04', 'c'), ex('2026-08-02', 'a'), ex('2026-08-03', 'b'),
+    ])
+    expect(periods).toHaveLength(1)
+    expect(periods[0]).toMatchObject({ startDate: '2026-08-02', endDate: '2026-08-04' })
+  })
+
+  it('跨月連續視為同一段', () => {
+    const periods = excludedPeriods([ex('2026-07-31', 'a'), ex('2026-08-01', 'b')])
+    expect(periods).toEqual([
+      { startDate: '2026-07-31', endDate: '2026-08-01', dayCount: 2, recordCount: 2 },
+    ])
+  })
+
+  it('跨年連續視為同一段', () => {
+    const periods = excludedPeriods([ex('2026-12-31', 'a'), ex('2027-01-01', 'b')])
+    expect(periods).toHaveLength(1)
+    expect(periods[0]).toMatchObject({ startDate: '2026-12-31', endDate: '2027-01-01' })
+  })
+
+  it('未被排除的紀錄不會把兩段接起來', () => {
+    const periods = excludedPeriods([
+      ex('2026-08-02', 'a'),
+      { id: 'b', date: '2026-08-03' }, // 中間這天沒被排除
+      ex('2026-08-04', 'c'),
+    ])
+    expect(periods).toHaveLength(2)
+  })
+
+  it('無法判定日期的紀錄不會形成區段', () => {
+    const periods = excludedPeriods([{ id: 'x', excludedFromAnalysis: true }])
+    expect(periods).toEqual([])
+  })
+})
+
+describe('formatPeriodLabel', () => {
+  it('單日只顯示一個日期', () => {
+    expect(formatPeriodLabel({ startDate: '2026-08-02', endDate: '2026-08-02' })).toBe('8/2')
+  })
+
+  it('多日顯示起訖並去掉補零', () => {
+    expect(formatPeriodLabel({ startDate: '2026-08-02', endDate: '2026-08-13' })).toBe('8/2–8/13')
   })
 })
