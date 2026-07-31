@@ -298,7 +298,7 @@ import {
   getTotalSleepRating,
   getSleepOnsetRating,
   getSleepOffsetRating,
-} from '@/composables/sleep-references.js'
+} from '@/lib/sleep-references.js'
 
 const router = useRouter()
 const {
