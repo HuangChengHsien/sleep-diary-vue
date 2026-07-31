@@ -5,9 +5,10 @@ import { ref, computed } from 'vue'
 import { useLocalDB } from './useLocalDB'
 import { useDiaryUtils } from './useDiaryUtils'
 import { buildRecordTimestamps } from '@/lib/sleep-record-input.js'
+import { recordsInDateRange } from '@/lib/record-exclusion.js'
 
 export function useSleepTracking() {
-  const { saveSleepRecord, deleteSleepRecord } = useLocalDB()
+  const { getSleepRecord, saveSleepRecord, deleteSleepRecord } = useLocalDB()
   const {
     normalizeTimestamp,
     getTodayString,
@@ -165,7 +166,12 @@ export function useSleepTracking() {
 
     const { date, bedtime, sleepTime, wakeTime, wakeCount, notes } = formData
 
+    // 先取回既有紀錄再覆蓋表單欄位。db.put 是整筆取代，不這樣做的話
+    // 表單以外的欄位（例如 excludedFromAnalysis）會在每次編輯時被清掉。
+    const existing = (await getSleepRecord(recordId)) || {}
+
     const data = {
+      ...existing,
       id: recordId,
       ...buildRecordTimestamps({ date, bedtime, sleepTime, wakeTime }),
       wakeCount: parseInt(wakeCount) || 0,
@@ -177,6 +183,42 @@ export function useSleepTracking() {
     await saveSleepRecord(currentBabyId, data)
     updateCallback?.()
     return '睡眠記錄已更新'
+  }
+
+  // ── 不列入分析 ───────────────────────────────────
+  // 只翻一個布林欄位，時間戳原樣寫回（normalizeSleepRecord 對 ISO 字串是恆等的）。
+
+  const setSleepRecordExcluded = async (currentBabyId, record, excluded, updateCallback) => {
+    if (!currentBabyId) throw new Error('請先選擇個案')
+    if (!record?.id) throw new Error('無效的記錄')
+
+    await saveSleepRecord(currentBabyId, { ...record, excludedFromAnalysis: excluded })
+    updateCallback?.()
+    return excluded ? '已將該筆記錄排除於分析之外' : '已將該筆記錄恢復計入分析'
+  }
+
+  const setSleepRecordsExcludedInRange = async (
+    currentBabyId,
+    records,
+    startDate,
+    endDate,
+    excluded,
+    updateCallback,
+  ) => {
+    if (!currentBabyId) throw new Error('請先選擇個案')
+    if (!startDate || !endDate) throw new Error('請選擇起訖日期')
+
+    const targets = recordsInDateRange(records, startDate, endDate)
+    if (targets.length === 0) throw new Error('這個日期區間內沒有睡眠記錄')
+
+    for (const record of targets) {
+      await saveSleepRecord(currentBabyId, { ...record, excludedFromAnalysis: excluded })
+    }
+    updateCallback?.()
+
+    return excluded
+      ? `已排除 ${targets.length} 筆記錄，不列入分析`
+      : `已恢復 ${targets.length} 筆記錄，重新列入分析`
   }
 
   const removeSleepRecord = async (currentBabyId, recordId, updateCallback) => {
@@ -228,6 +270,8 @@ export function useSleepTracking() {
     addManualSleepRecord,
     editSleepRecord,
     removeSleepRecord,
+    setSleepRecordExcluded,
+    setSleepRecordsExcludedInRange,
     formatSleepRecordForDisplay,
   }
 }

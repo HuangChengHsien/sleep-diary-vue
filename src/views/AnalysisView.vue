@@ -82,6 +82,11 @@
         </div>
       </div>
 
+      <div v-if="excludedInRangeCount > 0" class="stats-notice">
+        🚫 這個範圍內有 {{ excludedInRangeCount }} 筆記錄被你標記為「不列入分析」，
+        上方所有統計與下方圖表都不含這些記錄。可到日誌頁面調整。
+      </div>
+
       <div v-if="filteredStatistics.recordsExcludedFromNightStats > 0" class="stats-notice">
         ⚠️ 有 {{ filteredStatistics.recordsExcludedFromNightStats }} 筆記錄的上床時間落在白天
         (09:00–18:00) 但入睡時間在夜晚，因此未計入上方四項夜晚統計。
@@ -316,6 +321,7 @@ import {
 } from '@/lib/chart-calc'
 import { DARK_THEME } from '@/lib/chart-theme'
 import { MAX_PLAUSIBLE_LATENCY_MINUTES } from '@/lib/sleep-record-input'
+import { analysableRecords, excludedRecords } from '@/lib/record-exclusion'
 import {
   getLatencyRating,
   getTotalSleepRating,
@@ -409,15 +415,24 @@ const filterDailyDataByDays = (dailyData, dayRange) => {
 }
 
 // 🆕 篩選後的數據
+// 使用者標記「不列入分析」的紀錄，在進入任何統計與圖表之前就先濾掉。
+// 只有這一個入口，統計卡、明細表、所有圖表都從這裡取資料，不會有漏網的路徑。
+const analysableSleepRecords = computed(() => analysableRecords(sleepRecords.value))
+
 const filteredSleepRecords = computed(() => {
-  return filterDataByDays(sleepRecords.value, chartFilter.value.dayRange)
+  return filterDataByDays(analysableSleepRecords.value, chartFilter.value.dayRange)
 })
 
+// 目前顯示範圍內被排除的筆數 —— 排除必須看得見，否則就是另一種無聲丟資料
+const excludedInRangeCount = computed(
+  () => filterDataByDays(excludedRecords(sleepRecords.value), chartFilter.value.dayRange).length,
+)
+
 const filteredDailySleepData = computed(() => {
-  if (!sleepRecords.value || sleepRecords.value.length === 0) {
+  if (analysableSleepRecords.value.length === 0) {
     return []
   }
-  const dailyData = processDailySleepData(sleepRecords.value)
+  const dailyData = processDailySleepData(analysableSleepRecords.value)
   return filterDailyDataByDays(dailyData, chartFilter.value.dayRange)
 })
 
@@ -456,6 +471,9 @@ const chartEmptyMessage = computed(() => {
   if (!currentBaby.value) return '請先選擇個案'
   if (!sleepRecords.value || sleepRecords.value.length === 0) {
     return '這個個案還沒有睡眠記錄'
+  }
+  if (excludedInRangeCount.value > 0) {
+    return `這個範圍內的 ${excludedInRangeCount.value} 筆記錄都被標記為「不列入分析」，可到日誌頁面恢復`
   }
   if (chartFilter.value.dayRange === 'all') return '沒有可顯示的睡眠記錄'
   return `最近 ${chartFilter.value.dayRange} 天沒有睡眠記錄，可以放寬上方的顯示範圍`
@@ -516,7 +534,8 @@ const getFilterDisplayText = () => {
 }
 
 const getFilterStatusText = () => {
-  const totalRecords = sleepRecords.value?.length || 0
+  // 數的是「會被分析的」筆數，與圖表內容一致；被排除的另由橫幅說明
+  const totalRecords = analysableSleepRecords.value.length
   const filteredRecords = filteredSleepRecords.value?.length || 0
 
   if (chartFilter.value.dayRange === 'all') {
