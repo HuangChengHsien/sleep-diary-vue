@@ -387,7 +387,7 @@ table th {
   color: rgba(241,237,224,0.5);
   font-size: 11px;
   font-weight: 500;
-  font-family: 'SF Mono', Menlo, monospace;
+  font-family: inherit;
   letter-spacing: 0.5px;
   text-align: left;
   padding: 10px 12px;
@@ -464,7 +464,7 @@ table tr:hover td {
   border: 1px solid rgba(212,179,106,0.2);
   color: #D4B36A;
   font-size: 12px;
-  font-family: 'SF Mono', Menlo, monospace;
+  font-family: inherit;
 }
 
 .excluded-period small {
@@ -487,7 +487,7 @@ table tr:hover td {
 
 .exclude-range-hint {
   font-size: 11px; color: rgba(241,237,224,0.4);
-  font-family: 'SF Mono', Menlo, monospace;
+  font-family: inherit;
 }
 
 .exclude-btn {
@@ -589,7 +589,7 @@ table tr.excluded td.col-actions {
   color: rgba(241,237,224,0.35);
   font-size: 12px;
   margin-top: 10px;
-  font-family: 'SF Mono', Menlo, monospace;
+  font-family: inherit;
 }
 
 .filter-info {

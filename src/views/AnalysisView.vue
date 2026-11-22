@@ -1035,7 +1035,7 @@ onUnmounted(() => {
 .stat-card.improvement { border-left: 3px solid #D4B36A; }
 
 .stat-value {
-  font-family: 'SF Mono', Menlo, monospace;
+  font-family: inherit;
   font-size: 26px; font-weight: 500;
   color: #F1EDE0; letter-spacing: -0.5px; line-height: 1;
 }
@@ -1048,7 +1048,7 @@ onUnmounted(() => {
 .stat-subtitle {
   font-size: 11px; color: rgba(241,237,224,0.35);
   margin-top: 3px;
-  font-family: 'SF Mono', Menlo, monospace;
+  font-family: inherit;
 }
 
 /* 數值可信度的提醒，不是評級 —— 用暖色與評級邊框區隔 */
@@ -1110,7 +1110,7 @@ onUnmounted(() => {
 .legend-source-footer {
   margin-top: 12px;
   font-size: 10px; color: rgba(241,237,224,0.3);
-  font-family: 'SF Mono', Menlo, monospace;
+  font-family: inherit;
   border-top: 1px solid rgba(241,237,224,0.06); padding-top: 10px;
 }
 
@@ -1132,7 +1132,7 @@ onUnmounted(() => {
 .daily-filter-info { display: flex; align-items: center; }
 
 .filter-badge {
-  font-family: 'SF Mono', Menlo, monospace;
+  font-family: inherit;
   font-size: 10px; color: #9FD4D4;
   background: rgba(159,212,212,0.08);
   border: 1px solid rgba(159,212,212,0.15);
@@ -1155,7 +1155,7 @@ table th {
   background: rgba(241,237,224,0.04);
   color: rgba(241,237,224,0.5);
   font-size: 12px; font-weight: 500;
-  font-family: 'SF Mono', Menlo, monospace;
+  font-family: inherit;
   letter-spacing: 1px; text-align: left;
   padding: 12px 14px;
   border-bottom: 1px solid rgba(241,237,224,0.07);
@@ -1199,7 +1199,7 @@ table tr:hover td { background: rgba(241,237,224,0.02); }
 }
 
 .filter-status .status-text {
-  font-family: 'SF Mono', Menlo, monospace;
+  font-family: inherit;
   font-size: 11px; color: rgba(241,237,224,0.4);
 }
 
@@ -1215,7 +1215,7 @@ table tr:hover td { background: rgba(241,237,224,0.02); }
 .quick-btn {
   padding: 10px 18px; border-radius: 100px;
   min-height: 44px;
-  font-size: 14px; font-family: 'SF Mono', Menlo, monospace;
+  font-size: 14px; font-family: inherit;
   cursor: pointer; white-space: nowrap;
   background: transparent;
   color: rgba(241,237,224,0.45);
@@ -1257,7 +1257,7 @@ table tr:hover td { background: rgba(241,237,224,0.02); }
 .control-group label {
   font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
   color: rgba(241,237,224,0.4);
-  font-family: 'SF Mono', Menlo, monospace;
+  font-family: inherit;
 }
 
 .control-group select {

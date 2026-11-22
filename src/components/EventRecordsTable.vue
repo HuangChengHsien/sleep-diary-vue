@@ -246,7 +246,7 @@ table th {
   color: rgba(241,237,224,0.5);
   font-size: 11px;
   font-weight: 500;
-  font-family: 'SF Mono', Menlo, monospace;
+  font-family: inherit;
   letter-spacing: 0.5px;
   text-align: left;
   padding: 10px 14px;
@@ -320,7 +320,7 @@ table td:nth-child(3) {
   color: rgba(241,237,224,0.35);
   font-size: 12px;
   margin-top: 10px;
-  font-family: 'SF Mono', Menlo, monospace;
+  font-family: inherit;
 }
 
 /* ── RWD ──────────────────────────────────────────── */

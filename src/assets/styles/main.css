@@ -1,5 +1,4 @@
 /* src/assets/styles/main.css */
-@import url('https://fonts.googleapis.com/css2?family=Huninn&display=swap');
 
 /* ── CSS 變數 ─────────────────────────────────────── */
 :root {
@@ -40,7 +39,10 @@ body.dark-mode {
 
 /* ── Base ─────────────────────────────────────────── */
 body {
-  font-family: 'Huninn', sans-serif;
+  /* 只用裝置內建字體：不連外部字型服務，開啟較快、離線也一致。
+     數字一律等寬（tabular-nums），時間與統計表對齊。 */
+  font-family: -apple-system, 'PingFang TC', 'Helvetica Neue', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
   background: #0a1020;
   margin: 0;
   padding: 0;

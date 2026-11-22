@@ -589,7 +589,7 @@ onMounted(async () => {
   padding: 5px 20px 8px;
   font-size: 11px;
   color: rgba(241, 237, 224, 0.3);
-  font-family: 'SF Mono', Menlo, monospace;
+  font-family: inherit;
   letter-spacing: 0.3px;
   border-top: 1px solid rgba(241, 237, 224, 0.04);
 }
@@ -618,7 +618,7 @@ onMounted(async () => {
 }
 
 .section-mono {
-  font-family: 'SF Mono', Menlo, monospace;
+  font-family: inherit;
   font-size: 10px;
   letter-spacing: 2px;
   color: #9fd4d4;
@@ -709,7 +709,7 @@ onMounted(async () => {
 
 /* ── Section label ───────────────────────────── */
 .section-label {
-  font-family: 'SF Mono', Menlo, monospace;
+  font-family: inherit;
   font-size: 10px;
   letter-spacing: 2px;
   color: rgba(241, 237, 224, 0.35);
@@ -734,7 +734,7 @@ onMounted(async () => {
 }
 
 .sum-val {
-  font-family: 'SF Mono', Menlo, monospace;
+  font-family: inherit;
   font-size: 22px;
   font-weight: 500;
   color: #f1ede0;
@@ -791,7 +791,7 @@ onMounted(async () => {
   font-size: 12px;
   /* 0.5 → #7e7e80 on #0a1020 ≈ 4.7:1 (WCAG AA) */
   color: rgba(241, 237, 224, 0.5);
-  font-family: 'SF Mono', Menlo, monospace;
+  font-family: inherit;
   letter-spacing: 0.4px;
 }
 
@@ -873,7 +873,7 @@ onMounted(async () => {
   background: rgba(241, 237, 224, 0.05) !important;
   color: rgba(241, 237, 224, 0.6) !important;
   border-color: rgba(241, 237, 224, 0.08) !important;
-  font-family: 'SF Mono', Menlo, monospace;
+  font-family: inherit;
   font-size: 11px;
   letter-spacing: 1px;
 }
