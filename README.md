@@ -2,7 +2,7 @@
 
 一個為兒童與家長設計的睡眠紀錄工具，協助持續追蹤作息、入睡時間、夜醒狀況與睡眠品質，讓回診時能提供醫師客觀的資料參考。
 
-**線上使用：** <https://sleep-diary-rust.vercel.app>
+**線上使用：** <https://diary.kidnsleep.com>
 
 ## 關於這個工具
 
