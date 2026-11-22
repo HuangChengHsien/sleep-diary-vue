@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- 睡眠日誌「小屋 Home」單色圖示（深色 #1B1B1B，透明底）：圓盤鏤空出小屋外框、弦月與右上點，幾何同 /favicon.svg -->
+  <defs>
+    <mask id="m" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+      <rect width="512" height="512" fill="#000" />
+      <circle cx="256" cy="256" r="190" fill="#fff" />
+      <path
+        d="M 160 238 L 256 142 L 352 238 V 374 H 160 Z"
+        fill="none"
+        stroke="#000"
+        stroke-width="28"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path d="M 242.0 234.9 A 56.0 56.0 0 1 0 307.1 300.0 A 46.2 46.2 0 0 1 242.0 234.9 Z" fill="#000" />
+      <circle cx="358" cy="154" r="28" fill="#000" />
+    </mask>
+  </defs>
+  <rect width="512" height="512" fill="#1B1B1B" mask="url(#m)" />
+</svg>

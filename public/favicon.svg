@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    睡眠日誌 圖示「小屋 Home」（KidnSleep 圖示家族）
+    色票：紙底 #FAF7F0｜暖墨圓盤 #231C15｜小屋外框與弦月 #FAF7F0｜金色點 #D4B36A
+    家族規則：深色圓盤當底；單一弧線／外框主圖形；右上角一個點；
+    512 畫布上筆畫 28px、圓頭圓角；純平面（無漸層、陰影）；圓盤上不超過 3 個元素。
+    圓盤半徑 190 ≤ 204，落在 maskable 安全區內。
+    public/*.png 與 favicon.ico 皆由同一幾何繪製，修改時請一併重出。
+  -->
+  <rect width="512" height="512" fill="#FAF7F0" />
+  <circle cx="256" cy="256" r="190" fill="#231C15" />
+  <path
+    d="M 160 238 L 256 142 L 352 238 V 374 H 160 Z"
+    fill="none"
+    stroke="#FAF7F0"
+    stroke-width="28"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path d="M 242.0 234.9 A 56.0 56.0 0 1 0 307.1 300.0 A 46.2 46.2 0 0 1 242.0 234.9 Z" fill="#FAF7F0" />
+  <circle cx="358" cy="154" r="28" fill="#D4B36A" />
+</svg>

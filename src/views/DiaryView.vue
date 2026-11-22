@@ -189,6 +189,7 @@
     <!-- 頁尾 -->
     <footer class="site-footer">
       <span>睡眠日誌</span>
+      <a class="footer-brand" href="https://kidnsleep.com" target="_blank">by KidnSleep</a>
       <span class="footer-sep">·</span>
       <span>製作者：黃正憲醫師</span>
     </footer>
@@ -794,6 +795,17 @@ onMounted(async () => {
 .footer-sep {
   margin: 0 8px;
   opacity: 0.4;
+}
+
+.footer-brand {
+  margin-left: 6px;
+  color: inherit;
+  text-decoration: none;
+}
+.footer-brand:hover,
+.footer-brand:focus-visible {
+  color: rgba(241, 237, 224, 0.6);
+  text-decoration: underline;
 }
 
 /* ── 子元件樣式覆蓋（全域，影響 scoped child components）── */
