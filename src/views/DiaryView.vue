@@ -189,7 +189,9 @@
     <!-- 頁尾 -->
     <footer class="site-footer">
       <span>睡眠日誌</span>
-      <a class="footer-brand" href="https://kidnsleep.com" target="_blank">by KidnSleep</a>
+      <a class="footer-brand" href="https://kidnsleep.com" target="_blank" rel="noopener"
+        >by KidnSleep</a
+      >
       <span class="footer-sep">·</span>
       <span>製作者：黃正憲醫師</span>
     </footer>
@@ -787,7 +789,8 @@ onMounted(async () => {
   border-top: 1px solid rgba(241, 237, 224, 0.06);
   text-align: center;
   font-size: 12px;
-  color: rgba(241, 237, 224, 0.25);
+  /* 0.5 → #7e7e80 on #0a1020 ≈ 4.7:1 (WCAG AA) */
+  color: rgba(241, 237, 224, 0.5);
   font-family: 'SF Mono', Menlo, monospace;
   letter-spacing: 0.4px;
 }
@@ -799,13 +802,26 @@ onMounted(async () => {
 
 .footer-brand {
   margin-left: 6px;
-  color: inherit;
-  text-decoration: none;
-}
-.footer-brand:hover,
-.footer-brand:focus-visible {
+  /* 0.6 → #959593 on #0a1020 ≈ 6.3:1 */
   color: rgba(241, 237, 224, 0.6);
   text-decoration: underline;
+  text-decoration-color: rgba(241, 237, 224, 0.35);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  border-radius: 2px;
+  transition:
+    color 0.2s,
+    text-decoration-color 0.2s;
+}
+.footer-brand:hover {
+  color: rgba(241, 237, 224, 0.85);
+  text-decoration-color: currentColor;
+}
+.footer-brand:focus-visible {
+  color: rgba(241, 237, 224, 0.85);
+  text-decoration-color: currentColor;
+  outline: 2px solid #d4b36a;
+  outline-offset: 3px;
 }
 
 /* ── 子元件樣式覆蓋（全域，影響 scoped child components）── */
