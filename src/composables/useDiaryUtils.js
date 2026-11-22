@@ -1,9 +1,6 @@
 // src/composables/useDiaryUtils.js
-import { ref, computed } from 'vue'
 
 export function useDiaryUtils() {
-  const currentTheme = ref(localStorage.getItem('theme') || 'light')
-
   // 計算年齡
   const calculateAge = (birthDate) => {
     if (!birthDate) return '未設定'
@@ -66,22 +63,6 @@ export function useDiaryUtils() {
           day: '2-digit',
         })
       : '-'
-  }
-
-  // 主題切換
-  const toggleTheme = () => {
-    currentTheme.value = currentTheme.value === 'dark' ? 'light' : 'dark'
-    localStorage.setItem('theme', currentTheme.value)
-    applyTheme()
-  }
-
-  // 應用主題
-  const applyTheme = () => {
-    if (currentTheme.value === 'dark') {
-      document.body.classList.add('dark-mode')
-    } else {
-      document.body.classList.remove('dark-mode')
-    }
   }
 
   // 獲取當前時間
@@ -154,16 +135,7 @@ export function useDiaryUtils() {
     return `${babyName}_sleep_backup_${dateStr}_${timeStr}.json`
   }
 
-  // 是否為深色模式
-  const isDarkMode = computed(() => currentTheme.value === 'dark')
-
-  // 主題圖標
-  const themeIcon = computed(() => (isDarkMode.value ? '☀️' : '🌙'))
-
   return {
-    currentTheme,
-    isDarkMode,
-    themeIcon,
     calculateAge,
     formatDuration,
     normalizeTimestamp,
@@ -171,8 +143,6 @@ export function useDiaryUtils() {
     formatTime,
     formatDate,
     formatShortDate,
-    toggleTheme,
-    applyTheme,
     getCurrentTime,
     getTodayString,
     calculateSleepDuration,

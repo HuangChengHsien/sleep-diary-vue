@@ -6,7 +6,26 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0A1020" />
+    <meta name="theme-color" content="#FAF7F0" />
+    <script>
+      // 首屏前決定主題，避免半夜打開先閃一整面亮色。邏輯與 src/lib/theme.js 一致，色碼＝tokens.css 的 --bg。
+      ;(function () {
+        var pref = 'system'
+        try {
+          var stored = localStorage.getItem('theme')
+          if (stored === 'light' || stored === 'dark' || stored === 'system') pref = stored
+        } catch (e) {}
+        var dark =
+          pref === 'dark' ||
+          (pref === 'system' &&
+            window.matchMedia &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches)
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+        document
+          .querySelector('meta[name="theme-color"]')
+          .setAttribute('content', dark ? '#14100C' : '#FAF7F0')
+      })()
+    </script>
     <meta name="description" content="記錄與分析兒童青少年睡眠品質，資料完全儲存於本機裝置。" />
     <title>睡眠日誌</title>
   </head>

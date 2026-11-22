@@ -2,11 +2,18 @@
 // 每次睡眠時間長度趨勢圖（最近 28 筆有效記錄）。
 
 import { Chart } from './chart-setup.js'
-import { chartManager } from './chart-manager.js'
+import {
+  chartManager,
+  resolveRenderOptions,
+  animationOption,
+  CHART_FONT_FAMILY,
+} from './chart-manager.js'
+import { withAlpha } from '@/lib/chart-theme.js'
 import { drawNoDataMessage } from './no-data.js'
 import { normalizeTimestamp, getLocalDateString } from '@/lib/chart-calc.js'
 
-export const renderDurationChart = (sleepData) => {
+export const renderDurationChart = (sleepData, options) => {
+  const { theme, animate } = resolveRenderOptions(options)
   const canvas = document.getElementById('durationCanvas')
   if (!canvas) return
   const ctx = canvas.getContext('2d')
@@ -34,7 +41,7 @@ export const renderDurationChart = (sleepData) => {
     }))
 
   if (processedData.length === 0) {
-    drawNoDataMessage(ctx, canvas, '沒有足夠的睡眠記錄')
+    drawNoDataMessage(ctx, canvas, '沒有足夠的睡眠記錄', theme)
     return
   }
 
@@ -46,8 +53,8 @@ export const renderDurationChart = (sleepData) => {
         {
           label: '睡眠時長 (小時)',
           data: processedData.map((d) => d.y),
-          borderColor: '#2196F3',
-          backgroundColor: 'rgba(33, 150, 243, 0.1)',
+          borderColor: theme.series[0],
+          backgroundColor: withAlpha(theme.series[0], 0.1),
           tension: 0.3,
           fill: true,
         },
@@ -56,6 +63,7 @@ export const renderDurationChart = (sleepData) => {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      ...animationOption(animate),
       scales: {
         y: {
           beginAtZero: true,
@@ -68,13 +76,13 @@ export const renderDurationChart = (sleepData) => {
       plugins: {
         title: {
           display: true,
-          text: '📊 睡眠時長趨勢',
+          text: '睡眠時長趨勢',
         },
         datalabels: {
           display: true,
           align: 'top',
           anchor: 'end',
-          color: '#2196F3',
+          color: theme.ink,
           font: {
             size: 11,
             weight: 'bold',
@@ -98,8 +106,8 @@ export const renderDurationChart = (sleepData) => {
                 const dataString = dataset.data[index].toFixed(1) + 'h'
                 const fontSize = 11
                 const fontStyle = 'bold'
-                const fontFamily = 'Arial'
-                ctx.fillStyle = '#64B5F6'
+                const fontFamily = CHART_FONT_FAMILY
+                ctx.fillStyle = theme.ink
                 ctx.font = `${fontStyle} ${fontSize}px ${fontFamily}`
                 ctx.textAlign = 'center'
                 ctx.textBaseline = 'bottom'

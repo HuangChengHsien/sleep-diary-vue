@@ -2,19 +2,21 @@
 // 每日睡眠分析圖（總計 / 夜晚 / 白天），並依年齡疊上建議睡眠時數的參考色帶。
 
 import { Chart } from './chart-setup.js'
-import { chartManager } from './chart-manager.js'
+import { chartManager, resolveRenderOptions } from './chart-manager.js'
+import { withAlpha } from '@/lib/chart-theme.js'
 import { drawNoDataMessage } from './no-data.js'
 import { calculateAgeInMonths } from '@/lib/chart-calc.js'
 import { getTotalSleepReferenceForAge, getTotalSleepRating } from '@/lib/sleep-references.js'
 
-export const renderDailyDurationChart = (dailyData, baby, dayRange = '14') => {
+export const renderDailyDurationChart = (dailyData, baby, dayRange = '14', options) => {
+  const { theme, animate } = resolveRenderOptions(options)
   const canvas = document.getElementById('dailyDurationCanvas')
   if (!canvas) return
   const ctx = canvas.getContext('2d')
   chartManager.destroyChart('dailyDuration')
 
   if (!dailyData || dailyData.length === 0) {
-    drawNoDataMessage(ctx, canvas, '沒有每日睡眠資料')
+    drawNoDataMessage(ctx, canvas, '沒有每日睡眠資料', theme)
     return
   }
 
@@ -55,56 +57,62 @@ export const renderDailyDurationChart = (dailyData, baby, dayRange = '14') => {
     )
   }
 
+  // 參考帶配色：理想＝--success、可接受＝中性 --border-strong（不用警示色表示「可接受」）
+  const idealFill = withAlpha(theme.success, 0.18)
+  const idealLine = withAlpha(theme.success, 0.8)
+  const acceptableFill = withAlpha(theme.borderStrong, 0.18)
+  const acceptableLine = withAlpha(theme.borderStrong, 0.6)
+
   // 準備 annotation 配置
   let annotations = {}
   if (sleepReference) {
-    // 理想範圍 (綠色)
+    // 理想範圍
     annotations.recommendedBand = {
       type: 'box',
       yMin: sleepReference.recommended.min,
       yMax: sleepReference.recommended.max,
-      backgroundColor: 'rgba(40, 167, 69, 0.15)',
-      borderColor: 'rgba(40, 167, 69, 0.3)',
+      backgroundColor: idealFill,
+      borderColor: withAlpha(theme.success, 0.35),
       borderWidth: 1,
       label: {
         enabled: true,
         content: `理想: ${sleepReference.recommended.min}-${sleepReference.recommended.max}h`,
         position: 'start',
-        backgroundColor: 'rgba(40, 167, 69, 0.8)',
-        color: 'white',
+        backgroundColor: theme.surface,
+        color: theme.success,
         font: {
           size: 11,
         },
       },
     }
 
-    // 可接受範圍下限 (黃色)
+    // 可接受範圍下限
     if (sleepReference.appropriate.min < sleepReference.recommended.min) {
       annotations.appropriateLowerBand = {
         type: 'box',
         yMin: sleepReference.appropriate.min,
         yMax: sleepReference.recommended.min,
-        backgroundColor: 'rgba(255, 193, 7, 0.15)',
-        borderColor: 'rgba(255, 193, 7, 0.3)',
+        backgroundColor: acceptableFill,
+        borderColor: withAlpha(theme.borderStrong, 0.35),
         borderWidth: 1,
       }
     }
 
-    // 可接受範圍上限 (黃色)
+    // 可接受範圍上限
     if (sleepReference.appropriate.max > sleepReference.recommended.max) {
       annotations.appropriateUpperBand = {
         type: 'box',
         yMin: sleepReference.recommended.max,
         yMax: sleepReference.appropriate.max,
-        backgroundColor: 'rgba(255, 193, 7, 0.15)',
-        borderColor: 'rgba(255, 193, 7, 0.3)',
+        backgroundColor: acceptableFill,
+        borderColor: withAlpha(theme.borderStrong, 0.35),
         borderWidth: 1,
         label: {
           enabled: true,
           content: `可接受: ${sleepReference.appropriate.min}-${sleepReference.appropriate.max}h`,
           position: 'end',
-          backgroundColor: 'rgba(255, 193, 7, 0.8)',
-          color: 'white',
+          backgroundColor: theme.surface,
+          color: theme.ink,
           font: {
             size: 11,
           },
@@ -117,7 +125,7 @@ export const renderDailyDurationChart = (dailyData, baby, dayRange = '14') => {
       type: 'line',
       yMin: sleepReference.recommended.min,
       yMax: sleepReference.recommended.min,
-      borderColor: 'rgba(40, 167, 69, 0.8)',
+      borderColor: idealLine,
       borderWidth: 2,
       borderDash: [5, 5],
     }
@@ -126,14 +134,14 @@ export const renderDailyDurationChart = (dailyData, baby, dayRange = '14') => {
       type: 'line',
       yMin: sleepReference.recommended.max,
       yMax: sleepReference.recommended.max,
-      borderColor: 'rgba(40, 167, 69, 0.8)',
+      borderColor: idealLine,
       borderWidth: 2,
       borderDash: [5, 5],
     }
   }
 
   // 動態生成圖表標題，包含篩選範圍信息
-  let chartTitle = '📈 每日睡眠分析'
+  let chartTitle = '每日睡眠分析'
   if (dayRange !== 'all') {
     chartTitle += ` (最近 ${dayRange} 天)`
   } else {
@@ -148,8 +156,8 @@ export const renderDailyDurationChart = (dailyData, baby, dayRange = '14') => {
         {
           label: '總睡眠',
           data: totalSleep,
-          borderColor: '#2196F3',
-          backgroundColor: 'rgba(33, 150, 243, 0.1)',
+          borderColor: theme.series[0],
+          backgroundColor: withAlpha(theme.series[0], 0.1),
           borderWidth: 3,
           fill: false,
           tension: 0.1,
@@ -157,7 +165,7 @@ export const renderDailyDurationChart = (dailyData, baby, dayRange = '14') => {
         {
           label: '夜晚睡眠',
           data: nightSleep,
-          borderColor: '#885ead',
+          borderColor: theme.series[1],
           borderWidth: 2,
           fill: false,
           tension: 0.1,
@@ -165,7 +173,7 @@ export const renderDailyDurationChart = (dailyData, baby, dayRange = '14') => {
         {
           label: '白天睡眠',
           data: daySleep,
-          borderColor: '#ff9800',
+          borderColor: theme.series[2],
           borderWidth: 2,
           fill: false,
           tension: 0.1,
@@ -191,7 +199,7 @@ export const renderDailyDurationChart = (dailyData, baby, dayRange = '14') => {
             },
           },
           grid: {
-            color: 'rgba(128, 128, 128, 0.1)',
+            color: theme.grid,
           },
         },
         x: {
@@ -217,21 +225,24 @@ export const renderDailyDurationChart = (dailyData, baby, dayRange = '14') => {
           display: true,
           position: 'bottom',
           labels: {
+            color: theme.ink,
             generateLabels: function (chart) {
               const original = Chart.defaults.plugins.legend.labels.generateLabels(chart)
 
               // 如果有睡眠參考數據，添加參考線圖例
               if (sleepReference) {
                 original.push({
-                  text: `🟢 理想範圍 (${sleepReference.recommended.min}-${sleepReference.recommended.max}h)`,
-                  fillStyle: 'rgba(40, 167, 69, 0.3)',
-                  strokeStyle: 'rgba(40, 167, 69, 0.8)',
+                  text: `理想範圍 (${sleepReference.recommended.min}-${sleepReference.recommended.max}h)`,
+                  fillStyle: idealFill,
+                  strokeStyle: idealLine,
+                  fontColor: theme.ink,
                   lineWidth: 2,
                 })
                 original.push({
-                  text: `🟡 可接受範圍 (${sleepReference.appropriate.min}-${sleepReference.appropriate.max}h)`,
-                  fillStyle: 'rgba(255, 193, 7, 0.3)',
-                  strokeStyle: 'rgba(255, 193, 7, 0.8)',
+                  text: `可接受範圍 (${sleepReference.appropriate.min}-${sleepReference.appropriate.max}h)`,
+                  fillStyle: acceptableFill,
+                  strokeStyle: acceptableLine,
+                  fontColor: theme.ink,
                   lineWidth: 1,
                 })
               }
@@ -250,9 +261,9 @@ export const renderDailyDurationChart = (dailyData, baby, dayRange = '14') => {
                 const rating = getTotalSleepRating(value, ageInMonths)
 
                 let statusText = ''
-                if (rating === 'good') statusText = '✅ 理想範圍'
-                else if (rating === 'acceptable') statusText = '⚠️ 可接受範圍'
-                else if (rating === 'improvement') statusText = '❗ 需要關注'
+                if (rating === 'good') statusText = '理想範圍'
+                else if (rating === 'acceptable') statusText = '可接受範圍'
+                else if (rating === 'improvement') statusText = '需要關注'
 
                 return statusText ? [`狀態: ${statusText}`] : []
               }
@@ -261,10 +272,13 @@ export const renderDailyDurationChart = (dailyData, baby, dayRange = '14') => {
           },
         },
       },
-      animation: {
-        duration: 1000,
-        easing: 'easeInOutQuart',
-      },
+      // 列印前重畫時關掉動畫，new Chart() 才會同步畫完
+      animation: animate
+        ? {
+            duration: 1000,
+            easing: 'easeInOutQuart',
+          }
+        : false,
     },
   })
 

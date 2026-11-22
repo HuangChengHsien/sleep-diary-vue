@@ -1,6 +1,7 @@
 <template>
-  <div class="event-form">
-    <h2>📝 事件記錄</h2>
+  <!-- 整塊都是操作（按鈕＋表單），紙本不印 -->
+  <div class="event-form no-print">
+    <h2><AppIcon name="pencil-line" class="title-icon" />事件記錄</h2>
     <p class="info-box">任何覺得會影響睡眠或在睡眠中發生的事件都可以記錄。</p>
 
     <!-- 快速事件按鈕 -->
@@ -41,7 +42,10 @@
         <textarea v-model="manualForm.notes" placeholder="輸入備註..." rows="3"></textarea>
       </div>
 
-      <button @click="handleAddManualEvent" :disabled="isLoading">+ 新增事件</button>
+      <button @click="handleAddManualEvent" :disabled="isLoading" class="btn-primary">
+        <AppIcon name="plus" />
+        新增事件
+      </button>
     </div>
   </div>
 </template>
@@ -50,6 +54,7 @@
 import { ref, onMounted } from 'vue'
 import { useEventTracking } from '@/composables/useEventTracking'
 import { useDiaryUtils } from '@/composables/useDiaryUtils'
+import AppIcon from '@/components/ui/AppIcon.js'
 
 const props = defineProps({
   currentBabyId: {
@@ -122,74 +127,81 @@ onMounted(() => {
 <style scoped>
 /* ── Panel ──────────────────────────────────────── */
 .event-form {
-  background: #131B33;
-  border: 1px solid rgba(241,237,224,0.08);
-  border-radius: 14px;
-  padding: 20px;
-  margin-bottom: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+  padding: var(--space-5);
+  margin-bottom: var(--space-5);
   box-sizing: border-box;
-  font-family: -apple-system, 'PingFang TC', 'Helvetica Neue', system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
+  color: var(--text);
 }
 
 .event-form h2 {
-  color: #F1EDE0;
-  border-bottom: 2px solid rgba(159,212,212,0.4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
   padding-bottom: 10px;
   margin-top: 0;
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
   font-size: 18px;
   font-weight: 600;
 }
 
-.info-box {
-  background: rgba(159,212,212,0.06);
-  border: 1px solid rgba(159,212,212,0.2);
-  border-radius: 8px;
-  padding: 10px 14px;
-  margin: 0 0 16px;
-  font-size: 13px;
-  color: rgba(159,212,212,0.85);
+.title-icon {
+  color: var(--primary);
 }
 
-/* ── Quick event buttons ────────────────────────── */
+.info-box {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin: 0 0 var(--space-4);
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+/* ── Quick event buttons：次要操作，外框樣式 ───── */
 .quick-event-buttons {
-  margin-bottom: 20px;
+  margin-bottom: var(--space-5);
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .quick-event-btn {
-  background: rgba(159,212,212,0.08);
-  color: rgba(159,212,212,0.85);
-  border: 1px solid rgba(159,212,212,0.2);
-  padding: 7px 13px;
+  min-height: var(--tap-min);
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  padding: 7px 14px;
   border-radius: 100px;
   cursor: pointer;
-  font-size: 12px;
-  font-family: inherit;
-  transition: all 0.15s;
+  font: inherit;
+  font-size: 14px;
+  transition: background 0.15s;
   white-space: nowrap;
 }
 
 .quick-event-btn:hover:not(:disabled) {
-  background: rgba(159,212,212,0.15);
-  color: #9FD4D4;
+  background: var(--surface-2);
 }
 
 .quick-event-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
 /* ── Manual form ─────────────────────────────────── */
 .manual-event-form {
-  background: rgba(241,237,224,0.03);
-  border: 1px solid rgba(241,237,224,0.08);
-  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   padding: 18px;
-  margin: 16px 0;
+  margin: var(--space-4) 0;
 }
 
 .form-group { margin-bottom: 14px; }
@@ -199,30 +211,29 @@ onMounted(() => {
   margin-bottom: 5px;
   font-size: 12px;
   font-weight: 500;
-  color: rgba(241,237,224,0.5);
+  color: var(--text-2);
 }
 
 .form-group select,
 .form-group input,
 .form-group textarea {
   width: 100%;
+  min-height: var(--tap-min);
   padding: 8px 10px;
-  background: #1A2340;
-  color: #F1EDE0;
-  border: 1px solid rgba(241,237,224,0.1);
-  border-radius: 7px;
-  font-size: 13px;
-  font-family: inherit;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 16px;
   box-sizing: border-box;
-  color-scheme: dark;
   transition: border-color 0.2s;
 }
 
 .form-group select:focus,
 .form-group input:focus,
 .form-group textarea:focus {
-  outline: none;
-  border-color: rgba(159,212,212,0.35);
+  border-color: var(--primary);
 }
 
 .form-group textarea {
@@ -243,21 +254,47 @@ onMounted(() => {
 }
 
 .btn-small {
-  padding: 8px 12px;
-  font-size: 12px;
-  background: rgba(241,237,224,0.07);
-  color: rgba(241,237,224,0.55);
-  border: 1px solid rgba(241,237,224,0.1);
-  border-radius: 6px;
+  min-height: var(--tap-min);
+  padding: 8px 14px;
+  font-size: 14px;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-family: inherit;
   white-space: nowrap;
-  transition: all 0.15s;
+  transition: background 0.15s;
 }
 
 .btn-small:hover {
-  background: rgba(241,237,224,0.12);
-  color: rgba(241,237,224,0.85);
+  background: var(--surface-2);
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--tap-min);
+  padding: 10px 18px;
+  background: var(--primary);
+  color: var(--on-primary);
+  border: none;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* ── RWD ────────────────────────────────────────── */

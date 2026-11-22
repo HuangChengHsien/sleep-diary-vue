@@ -5,12 +5,19 @@
 // 看起來比實際好。異常大的值（例如輸入時上下午選錯）也照畫，讓它自己現形。
 
 import { Chart } from './chart-setup.js'
-import { chartManager } from './chart-manager.js'
+import {
+  chartManager,
+  resolveRenderOptions,
+  animationOption,
+  CHART_FONT_FAMILY,
+} from './chart-manager.js'
+import { withAlpha } from '@/lib/chart-theme.js'
 import { drawNoDataMessage } from './no-data.js'
 import { normalizeTimestamp, getLocalDateString } from '@/lib/chart-calc.js'
 import { getLatencyChartBands } from '@/lib/sleep-references.js'
 
-export const renderLatencyChart = (sleepData) => {
+export const renderLatencyChart = (sleepData, options) => {
+  const { theme, animate } = resolveRenderOptions(options)
   const canvas = document.getElementById('latencyCanvas')
   if (!canvas) return
   const ctx = canvas.getContext('2d')
@@ -46,7 +53,7 @@ export const renderLatencyChart = (sleepData) => {
     }))
 
   if (nightRecordsWithLatency.length === 0) {
-    drawNoDataMessage(ctx, canvas, '沒有夜晚入睡耗時記錄')
+    drawNoDataMessage(ctx, canvas, '沒有夜晚入睡耗時記錄', theme)
     return
   }
 
@@ -67,13 +74,13 @@ export const renderLatencyChart = (sleepData) => {
         {
           label: '入睡耗時 (分鐘)',
           data: nightRecordsWithLatency.map((r) => r.latency),
-          borderColor: '#9C27B0',
-          backgroundColor: 'rgba(156, 39, 176, 0.1)',
+          borderColor: theme.series[0],
+          backgroundColor: withAlpha(theme.series[0], 0.1),
           tension: 0.3,
           pointRadius: 4,
           pointHoverRadius: 6,
-          pointBackgroundColor: '#9C27B0',
-          pointBorderColor: '#ffffff',
+          pointBackgroundColor: theme.series[0],
+          pointBorderColor: theme.surface,
           pointBorderWidth: 2,
           fill: true,
         },
@@ -82,6 +89,7 @@ export const renderLatencyChart = (sleepData) => {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      ...animationOption(animate),
       scales: {
         y: {
           beginAtZero: true,
@@ -106,7 +114,7 @@ export const renderLatencyChart = (sleepData) => {
       plugins: {
         title: {
           display: true,
-          text: '⏱️ 入睡耗時趨勢',
+          text: '入睡耗時趨勢',
           font: { size: 16 },
         },
         legend: {
@@ -130,13 +138,13 @@ export const renderLatencyChart = (sleepData) => {
         annotation: {
           drawTime: 'beforeDatasetsDraw', // 確保色塊在數據線條的下方
           annotations: {
-            // 理想範圍 (綠色)
+            // 理想範圍（--success）
             goodBand: {
               type: 'box',
               yMin: latencyBands.good.yMin,
               yMax: latencyBands.good.yMax,
-              backgroundColor: 'rgba(40, 167, 69, 0.15)', // 淺綠色
-              borderColor: 'rgba(40, 167, 69, 0.2)',
+              backgroundColor: withAlpha(theme.success, 0.18),
+              borderColor: withAlpha(theme.success, 0.35),
               borderWidth: 1,
               label: {
                 display: true,
@@ -144,8 +152,8 @@ export const renderLatencyChart = (sleepData) => {
                 position: 'start', // 標籤位置：start, center, end
                 xAdjust: 5, // 水平偏移
                 yAdjust: 10, // 垂直偏移
-                color: 'rgba(40, 167, 69, 0.8)', // 文字顏色
-                backgroundColor: 'rgba(255, 255, 255, 0.8)', // 背景顏色
+                color: theme.success, // 文字顏色
+                backgroundColor: theme.surface, // 背景顏色
                 font: {
                   size: 12,
                   weight: 'bold',
@@ -154,13 +162,13 @@ export const renderLatencyChart = (sleepData) => {
                 borderRadius: 4,
               },
             },
-            // 可接受範圍 (黃色)
+            // 可接受範圍（中性 --border-strong，不用警示色）
             acceptableBand: {
               type: 'box',
               yMin: latencyBands.acceptable.yMin,
               yMax: latencyBands.acceptable.yMax,
-              backgroundColor: 'rgba(255, 193, 7, 0.15)', // 淺黃色
-              borderColor: 'rgba(255, 193, 7, 0.2)',
+              backgroundColor: withAlpha(theme.borderStrong, 0.18),
+              borderColor: withAlpha(theme.borderStrong, 0.35),
               borderWidth: 1,
               label: {
                 display: true,
@@ -168,8 +176,8 @@ export const renderLatencyChart = (sleepData) => {
                 position: 'start', // 標籤位置：start, center, end
                 xAdjust: 5, // 水平偏移
                 yAdjust: 10, // 垂直偏移
-                color: 'rgba(255, 193, 7, 0.9)', // 文字顏色
-                backgroundColor: 'rgba(255, 255, 255, 0.8)', // 背景顏色
+                color: theme.ink, // 文字顏色（--border-strong 不當文字色）
+                backgroundColor: theme.surface, // 背景顏色
                 font: {
                   size: 12,
                   weight: 'bold',
@@ -195,8 +203,8 @@ export const renderLatencyChart = (sleepData) => {
                 const dataString = minutes + '分'
                 const fontSize = 11
                 const fontStyle = 'bold'
-                const fontFamily = 'Arial'
-                ctx.fillStyle = '#CE93D8'
+                const fontFamily = CHART_FONT_FAMILY
+                ctx.fillStyle = theme.ink
                 ctx.font = `${fontStyle} ${fontSize}px ${fontFamily}`
                 ctx.textAlign = 'center'
                 ctx.textBaseline = 'bottom'

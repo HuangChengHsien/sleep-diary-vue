@@ -1,13 +1,13 @@
 <template>
   <div class="records-container">
-    <h2>📋 事件列表</h2>
+    <h2><AppIcon name="clipboard-list" class="title-icon" />事件列表</h2>
 
     <!-- 日期篩選控制 -->
     <div class="filter-controls">
       <label>查看事件日期: </label>
       <input type="date" v-model="localFilterDate" @change="handleFilterChange" />
-      <button @click="handleFilterToday" class="btn-small filter-btn">今天</button>
-      <button @click="handleShowAll" class="btn-small filter-btn">全部</button>
+      <button @click="handleFilterToday" class="btn-small filter-btn no-print">今天</button>
+      <button @click="handleShowAll" class="btn-small filter-btn no-print">全部</button>
     </div>
 
     <div class="table-container">
@@ -18,7 +18,7 @@
             <th>日期</th>
             <th>時間</th>
             <th>事件說明</th>
-            <th>操作</th>
+            <th class="no-print">操作</th>
           </tr>
         </thead>
         <tbody>
@@ -31,7 +31,7 @@
             <td>{{ record.date }}</td>
             <td>{{ record.time }}</td>
             <td>{{ record.description }}</td>
-            <td>
+            <td class="no-print">
               <button @click="handleEdit(record)" class="edit-btn btn-small">編輯</button>
               <button @click="handleDelete(record)" class="delete-btn btn-small">刪除</button>
             </td>
@@ -49,6 +49,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useEventTracking } from '@/composables/useEventTracking'
+import AppIcon from '@/components/ui/AppIcon.js'
 
 const props = defineProps({
   records: {
@@ -149,33 +150,40 @@ onMounted(() => {
 .records-container {
   max-width: 100%;
   overflow: hidden;
-  background: #131B33;
-  border: 1px solid rgba(241,237,224,0.08);
-  border-radius: 14px;
-  padding: 20px;
-  margin-bottom: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+  padding: var(--space-5);
+  margin-bottom: var(--space-5);
   box-sizing: border-box;
-  font-family: -apple-system, 'PingFang TC', 'Helvetica Neue', system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
+  color: var(--text);
 }
 
 .records-container h2 {
-  color: #F1EDE0;
-  border-bottom: 2px solid rgba(159,212,212,0.4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
   padding-bottom: 10px;
   margin-top: 0;
-  margin-bottom: 20px;
+  margin-bottom: var(--space-5);
   font-size: 18px;
   font-weight: 600;
 }
 
+.title-icon {
+  color: var(--primary);
+}
+
 /* ── Filter controls ──────────────────────────────── */
 .filter-controls {
-  background: rgba(241,237,224,0.04);
-  border: 1px solid rgba(241,237,224,0.08);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   padding: 12px 16px;
-  border-radius: 10px;
-  margin-bottom: 16px;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -185,37 +193,36 @@ onMounted(() => {
 .filter-controls label {
   font-size: 13px;
   font-weight: 500;
-  color: rgba(241,237,224,0.7);
+  color: var(--text-2);
   white-space: nowrap;
 }
 
 .filter-controls input[type="date"] {
-  background: #1A2340;
-  color: #F1EDE0;
-  border: 1px solid rgba(241,237,224,0.15);
-  border-radius: 8px;
+  min-height: var(--tap-min);
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
   padding: 6px 10px;
-  font-size: 13px;
-  font-family: inherit;
-  color-scheme: dark;
+  font: inherit;
+  font-size: 16px;
 }
 
 .filter-controls input[type="date"]:focus {
-  outline: none;
-  border-color: rgba(159,212,212,0.4);
+  border-color: var(--primary);
 }
 
+/* 在 --surface-2 底上：hover 改邊框，不再疊同色底 */
 .filter-btn {
   background: transparent;
-  color: rgba(241,237,224,0.45);
-  border: 1px solid rgba(241,237,224,0.1);
+  color: var(--text-2);
+  border: 1px solid var(--border);
   border-radius: 100px;
-  transition: all 0.15s;
 }
 
 .filter-btn:hover {
-  background: rgba(241,237,224,0.05);
-  color: rgba(241,237,224,0.7);
+  border-color: var(--border-strong);
+  color: var(--text);
 }
 
 /* ── Table ────────────────────────────────────────── */
@@ -224,8 +231,8 @@ onMounted(() => {
   max-width: 100%;
   overflow-x: auto;
   margin: 4px 0 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(241,237,224,0.08);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
   box-sizing: border-box;
 }
 
@@ -236,21 +243,20 @@ onMounted(() => {
 table {
   width: 100%;
   border-collapse: collapse;
-  background: #131B33;
+  background: var(--surface);
   min-width: 500px;
   box-sizing: border-box;
 }
 
 table th {
-  background: rgba(241,237,224,0.04);
-  color: rgba(241,237,224,0.5);
+  background: var(--surface-2);
+  color: var(--text-2);
   font-size: 11px;
   font-weight: 500;
-  font-family: 'SF Mono', Menlo, monospace;
   letter-spacing: 0.5px;
   text-align: left;
   padding: 10px 14px;
-  border-bottom: 1px solid rgba(241,237,224,0.07);
+  border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -259,8 +265,8 @@ table th {
 table td {
   padding: 10px 14px;
   font-size: 13px;
-  color: rgba(241,237,224,0.75);
-  border-bottom: 1px solid rgba(241,237,224,0.05);
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
   vertical-align: middle;
   word-wrap: break-word;
   word-break: break-word;
@@ -269,7 +275,7 @@ table td {
 table tr:last-child td { border-bottom: none; }
 
 table tr:hover td {
-  background: rgba(241,237,224,0.04);
+  background: var(--surface-2);
 }
 
 /* 事件說明欄換行 */
@@ -281,55 +287,59 @@ table td:nth-child(3) {
 /* ── States ───────────────────────────────────────── */
 .no-data {
   text-align: center;
-  color: rgba(241,237,224,0.3);
+  color: var(--text-3);
   font-style: italic;
   padding: 40px 20px;
 }
 
 /* ── Buttons ──────────────────────────────────────── */
 .btn-small {
-  padding: 4px 8px;
-  font-size: 11px;
-  border: none;
-  border-radius: 6px;
+  min-height: var(--tap-min);
+  padding: 6px 12px;
+  font-size: 14px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  margin: 0 2px;
+  margin: 2px;
   font-family: inherit;
-  transition: opacity 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 }
 
+/* 編輯＝次要操作（外框） */
 .edit-btn {
-  background: rgba(212,179,106,0.15);
-  color: #D4B36A;
-  border: 1px solid rgba(212,179,106,0.2);
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border-strong);
 }
 
-.edit-btn:hover { opacity: 0.8; }
+.edit-btn:hover { background: var(--surface-2); }
 
+/* 刪除＝破壞性操作，唯一用紅色的地方 */
 .delete-btn {
-  background: rgba(220,80,80,0.12);
-  color: #E07070;
-  border: 1px solid rgba(220,80,80,0.2);
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
 }
 
-.delete-btn:hover { opacity: 0.8; }
+.delete-btn:hover { background: var(--danger-container); }
 
 /* ── Footer ───────────────────────────────────────── */
 .record-count {
   text-align: center;
-  color: rgba(241,237,224,0.35);
+  color: var(--text-3);
   font-size: 12px;
   margin-top: 10px;
-  font-family: 'SF Mono', Menlo, monospace;
 }
 
 /* ── RWD ──────────────────────────────────────────── */
 @media (max-width: 768px) {
+  /* 表格內的按鈕在窄螢幕縮小（仍 ≥ 36px，高於 WCAG 2.5.8 的 24px），避免每列被撐得很高 */
+  .btn-small { min-height: 36px; padding: 4px 10px; font-size: 13px; }
   .records-container { padding: 14px; }
   .filter-controls { flex-direction: column; align-items: flex-start; gap: 8px; }
   table { min-width: 400px; }
   table th, table td { padding: 8px 10px; font-size: 11px; }
-  .btn-small { padding: 3px 6px; font-size: 10px; }
 }
 
 @media (max-width: 480px) {
@@ -337,5 +347,18 @@ table td:nth-child(3) {
   table { min-width: 320px; }
   table th, table td { padding: 6px 8px; font-size: 10px; }
   .filter-controls { padding: 10px; gap: 8px; }
+}
+
+/* ── 列印：整張表攤開印，操作欄與篩選按鈕已用 .no-print 藏起來 ── */
+@media print {
+  .records-container,
+  .table-container {
+    overflow: visible;
+    box-shadow: none;
+  }
+
+  table { min-width: 0; }
+
+  table th { position: static; }
 }
 </style>

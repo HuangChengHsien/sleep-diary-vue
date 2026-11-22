@@ -2,11 +2,13 @@
 // 夜間清醒次數趨勢圖（僅夜晚睡眠記錄）。
 
 import { Chart } from './chart-setup.js'
-import { chartManager } from './chart-manager.js'
+import { chartManager, resolveRenderOptions, animationOption } from './chart-manager.js'
+import { withAlpha } from '@/lib/chart-theme.js'
 import { drawNoDataMessage } from './no-data.js'
 import { normalizeTimestamp, getLocalDateString } from '@/lib/chart-calc.js'
 
-export const renderWakeCountChart = (sleepData) => {
+export const renderWakeCountChart = (sleepData, options) => {
+  const { theme, animate } = resolveRenderOptions(options)
   const canvas = document.getElementById('wakeCountCanvas')
   if (!canvas) return
   const ctx = canvas.getContext('2d')
@@ -25,7 +27,7 @@ export const renderWakeCountChart = (sleepData) => {
     })
 
   if (nightRecords.length === 0) {
-    drawNoDataMessage(ctx, canvas, '沒有夜晚睡眠資料可供分析清醒次數')
+    drawNoDataMessage(ctx, canvas, '沒有夜晚睡眠資料可供分析清醒次數', theme)
     return
   }
 
@@ -45,13 +47,14 @@ export const renderWakeCountChart = (sleepData) => {
         {
           label: '清醒次數',
           data: chartData.map((d) => d.wakeCount),
-          borderColor: '#f44336',
-          backgroundColor: 'rgba(244, 67, 54, 0.1)',
+          // 固定用第二色（藍）：不用紅色表示沒睡好，也不用偏紅的 --chart-3
+          borderColor: theme.series[1],
+          backgroundColor: withAlpha(theme.series[1], 0.1),
           tension: 0.3,
           pointRadius: 5,
           pointHoverRadius: 7,
-          pointBackgroundColor: '#f44336',
-          pointBorderColor: '#ffffff',
+          pointBackgroundColor: theme.series[1],
+          pointBorderColor: theme.surface,
           pointBorderWidth: 2,
           fill: true,
         },
@@ -60,6 +63,7 @@ export const renderWakeCountChart = (sleepData) => {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      ...animationOption(animate),
       scales: {
         y: {
           beginAtZero: true,
@@ -84,7 +88,7 @@ export const renderWakeCountChart = (sleepData) => {
       plugins: {
         title: {
           display: true,
-          text: '🌙 夜間清醒次數趨勢',
+          text: '夜間清醒次數趨勢',
           font: { size: 16 },
         },
         legend: {

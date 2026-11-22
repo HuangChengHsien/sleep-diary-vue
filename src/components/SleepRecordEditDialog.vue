@@ -1,9 +1,9 @@
 <template>
-  <div class="modal-overlay" @click="handleOverlayClick">
+  <div class="modal-overlay no-print" @click="handleOverlayClick">
     <div class="modal-content" @click.stop>
       <div class="modal-header">
         <h2>編輯睡眠記錄</h2>
-        <button @click="handleClose" class="close-btn">&times;</button>
+        <button @click="handleClose" class="close-btn" aria-label="關閉">&times;</button>
       </div>
 
       <div class="modal-body">
@@ -264,7 +264,8 @@ onUnmounted(() => {
   position: fixed;
   top: 0; left: 0;
   width: 100%; height: 100%;
-  background: rgba(0, 0, 0, 0.7);
+  /* 遮罩刻意寫死黑色半透明：淺色、深色主題都適用（設計規劃 §2） */
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -279,18 +280,17 @@ onUnmounted(() => {
 
 /* ── Modal card ─────────────────────────────────── */
 .modal-content {
-  background: #131B33;
-  border: 1px solid rgba(241,237,224,0.1);
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
   padding: 0;
-  border-radius: 14px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
   width: 90%;
   max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
   animation: slideIn 0.25s ease;
-  font-family: -apple-system, 'PingFang TC', 'Helvetica Neue', system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
 }
 
 @keyframes slideIn {
@@ -304,14 +304,14 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px 16px;
-  border-bottom: 1px solid rgba(241,237,224,0.08);
+  border-bottom: 1px solid var(--border);
 }
 
 .modal-header h2 {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: #F1EDE0;
+  color: var(--text);
   border: none;
 }
 
@@ -320,21 +320,22 @@ onUnmounted(() => {
   border: none;
   font-size: 24px;
   cursor: pointer;
-  color: rgba(241,237,224,0.4);
+  color: var(--text-2);
   line-height: 1;
   padding: 0;
-  width: 30px;
-  height: 30px;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  margin-right: -10px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  transition: all 0.2s;
+  transition: background 0.2s, color 0.2s;
 }
 
 .close-btn:hover {
-  background: rgba(241,237,224,0.08);
-  color: #F1EDE0;
+  background: var(--surface-2);
+  color: var(--text);
 }
 
 /* ── Body ───────────────────────────────────────── */
@@ -346,30 +347,28 @@ onUnmounted(() => {
   display: block;
   margin-bottom: 7px;
   font-weight: 500;
-  color: rgba(241,237,224,0.65);
+  color: var(--text-2);
   font-size: 13px;
 }
 
 .form-group input,
 .form-group textarea {
   width: 100%;
+  min-height: var(--tap-min);
   padding: 10px 12px;
-  background: #1A2340;
-  color: #F1EDE0;
-  border: 1px solid rgba(241,237,224,0.12);
-  border-radius: 8px;
-  font-size: 14px;
-  font-family: inherit;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 16px;
+  transition: border-color 0.2s;
   box-sizing: border-box;
-  color-scheme: dark;
 }
 
 .form-group input:focus,
 .form-group textarea:focus {
-  outline: none;
-  border-color: rgba(159,212,212,0.4);
-  box-shadow: 0 0 0 3px rgba(159,212,212,0.08);
+  border-color: var(--primary);
 }
 
 .form-group input:disabled,
@@ -393,28 +392,29 @@ onUnmounted(() => {
 .time-input-group input { flex: 1; }
 
 .btn-small {
-  padding: 6px 12px;
-  font-size: 12px;
-  border-radius: 6px;
+  min-height: var(--tap-min);
+  padding: 6px 14px;
+  font-size: 14px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: background 0.15s;
   white-space: nowrap;
   font-family: inherit;
 }
 
+/* 「現在」＝次要操作（外框） */
 .now-btn {
-  background: rgba(241,237,224,0.07);
-  color: rgba(241,237,224,0.55);
-  border: 1px solid rgba(241,237,224,0.12);
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border-strong);
 }
 
 .now-btn:hover:not(:disabled) {
-  background: rgba(241,237,224,0.12);
-  color: rgba(241,237,224,0.85);
+  background: var(--surface-2);
 }
 
 .now-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
@@ -422,7 +422,7 @@ onUnmounted(() => {
   display: block;
   margin-top: 5px;
   font-size: 12px;
-  color: rgba(241,237,224,0.35);
+  color: var(--text-3);
   font-style: italic;
 }
 
@@ -432,46 +432,46 @@ onUnmounted(() => {
   justify-content: flex-end;
   gap: 10px;
   padding: 16px 24px 24px;
-  border-top: 1px solid rgba(241,237,224,0.08);
+  border-top: 1px solid var(--border);
+}
+
+/* 取消＝次要（外框）；送出＝主要（--primary） */
+.btn-secondary,
+.btn-primary {
+  min-height: var(--tap-min);
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font: inherit;
+  font-size: 15px;
+  transition: background 0.15s;
 }
 
 .btn-secondary {
-  padding: 9px 18px;
   background: transparent;
-  color: rgba(241,237,224,0.5);
-  border: 1px solid rgba(241,237,224,0.12);
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-family: inherit;
-  transition: all 0.15s;
+  color: var(--text);
+  border: 1px solid var(--border-strong);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: rgba(241,237,224,0.05);
-  color: rgba(241,237,224,0.8);
+  background: var(--surface-2);
 }
 
 .btn-primary {
-  padding: 9px 18px;
-  background: rgba(159,212,212,0.15);
-  color: #9FD4D4;
-  border: 1px solid rgba(159,212,212,0.25);
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-family: inherit;
-  font-weight: 500;
-  transition: all 0.15s;
+  background: var(--primary);
+  color: var(--on-primary);
+  border: 1px solid var(--primary);
+  font-weight: 600;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: rgba(159,212,212,0.22);
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
 }
 
 .btn-primary:disabled,
 .btn-secondary:disabled {
-  opacity: 0.4;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
