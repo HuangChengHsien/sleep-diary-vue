@@ -1,7 +1,7 @@
 <template>
   <!-- 顏色一律取自 tokens.css（淺色／深色跟隨系統），元件內不寫死色碼 -->
   <div class="diary-container">
-    <AppPageHeader title="睡眠日誌">
+    <AppPageHeader title="眠手帳">
       <template #actions>
         <AppMenu :items="menuItems" @select="onMenuSelect" />
       </template>
@@ -134,7 +134,7 @@
 
     <!-- 頁尾 -->
     <footer class="site-footer">
-      <span>睡眠日誌</span>
+      <span>眠手帳</span>
       <a class="footer-brand" href="https://kidnsleep.com" target="_blank" rel="noopener"
         >by KidnSleep</a
       >

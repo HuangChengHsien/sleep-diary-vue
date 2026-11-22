@@ -28,10 +28,10 @@ export default defineConfig({
       // Manifest 檔案設定
       manifest: {
         // 品牌背書寫法「X · by KidnSleep」；主畫面圖示下方只放得下 short_name
-        name: '睡眠日誌 · by KidnSleep',
-        short_name: '睡眠日誌',
+        name: '眠手帳 · by KidnSleep',
+        short_name: '眠手帳',
         lang: 'zh-TW',
-        description: '記錄與分析兒童青少年睡眠品質，資料完全儲存於本機裝置。',
+        description: '眠手帳：免登入的兒童青少年睡眠日誌。記錄與分析睡眠作息，資料只存在本機裝置。',
         // manifest 只能放一個值，兩者都用深色 token --bg #14100C：
         // background_color 是啟動畫面與 CSS 載入前的底色，多在睡前開啟，用紙色會先閃一下亮白。
         // 實際狀態列顏色由 index.html 的 inline script 依淺色／深色主題動態改 meta theme-color。

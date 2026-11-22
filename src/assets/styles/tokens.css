@@ -1,6 +1,6 @@
 /* src/assets/styles/tokens.css
  * 全站設計 token 的唯一來源。結構沿用眠序（sleep-diary-cbti）的 tokens.css，
- * 配色是睡眠日誌自己的「暖墨＋金」，取自圖示：紙 #FAF7F0、暖墨 #231C15、金 #D4B36A
+ * 配色是眠手帳（免登入睡眠日誌）自己的「暖墨＋金」，取自圖示：紙 #FAF7F0、暖墨 #231C15、金 #D4B36A
  * （2026-11-22 醫師核可，見 docs/design/warm-tokens-plan.md；改色前先讀 kidnsleep-brand skill）。
  * 主題掛在 <html data-theme="light|dark">，由 index.html 的 inline script 在首屏前決定，
  * 之後由 src/lib/theme.js 維護（預設跟隨系統）。
