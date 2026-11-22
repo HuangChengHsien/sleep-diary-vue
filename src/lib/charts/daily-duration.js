@@ -75,7 +75,8 @@ export const renderDailyDurationChart = (dailyData, baby, dayRange = '14', optio
       borderColor: withAlpha(theme.success, 0.35),
       borderWidth: 1,
       label: {
-        enabled: true,
+        // annotation v2 起由 enabled 改名為 display；寫 enabled 時標籤從來不會出現
+        display: true,
         content: `理想: ${sleepReference.recommended.min}-${sleepReference.recommended.max}h`,
         position: 'start',
         backgroundColor: theme.surface,
@@ -108,7 +109,7 @@ export const renderDailyDurationChart = (dailyData, baby, dayRange = '14', optio
         borderColor: withAlpha(theme.borderStrong, 0.35),
         borderWidth: 1,
         label: {
-          enabled: true,
+          display: true,
           content: `可接受: ${sleepReference.appropriate.min}-${sleepReference.appropriate.max}h`,
           position: 'end',
           backgroundColor: theme.surface,

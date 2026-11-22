@@ -38,11 +38,11 @@
             <div class="radio-group">
               <label class="radio-label">
                 <input type="radio" v-model="form.gender" value="male" :disabled="isLoading" />
-                👶 男寶
+                男寶
               </label>
               <label class="radio-label">
                 <input type="radio" v-model="form.gender" value="female" :disabled="isLoading" />
-                👧 女寶
+                女寶
               </label>
               <label class="radio-label">
                 <input type="radio" v-model="form.gender" value="" :disabled="isLoading" />
