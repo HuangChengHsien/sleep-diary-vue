@@ -49,7 +49,8 @@
       <!-- 列印專用。螢幕上的頁首與個案選單在列印時隱藏，
            少了這塊，印出來的報告沒有個案姓名，也看不出是哪個版本算的。 -->
       <div class="print-header">
-        <h1>眠手帳 · 數據分析報告</h1>
+        <PrintBrand position="header" />
+        <h1>睡眠數據分析報告</h1>
         <dl>
           <div>
             <dt>個案</dt>
@@ -379,6 +380,7 @@
           <p>{{ chartEmptyMessage }}</p>
         </div>
       </div>
+      <PrintBrand position="footer" />
     </div>
   </div>
 </template>
@@ -389,6 +391,7 @@ import { useBabyManagement } from '@/composables/useBabyManagement'
 import { useChartAnalysis } from '@/composables/useChartAnalysis'
 import { useThemeMenu } from '@/composables/useThemeMenu'
 import AppPageHeader from '@/components/ui/AppPageHeader.vue'
+import PrintBrand from '@/components/ui/PrintBrand.vue'
 import AppMenu from '@/components/ui/AppMenu.vue'
 import AppIcon from '@/components/ui/AppIcon.js'
 import DiarySwitcher from '@/components/ui/DiarySwitcher.vue'

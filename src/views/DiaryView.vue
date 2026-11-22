@@ -1,7 +1,8 @@
 <template>
   <!-- 顏色一律取自 tokens.css（淺色／深色跟隨系統），元件內不寫死色碼 -->
   <div class="diary-container">
-    <AppPageHeader title="眠手帳">
+    <PrintBrand position="header" />
+    <AppPageHeader title="眠手帳" class="no-print">
       <template #actions>
         <AppMenu :items="menuItems" @select="onMenuSelect" />
       </template>
@@ -133,7 +134,8 @@
     </div>
 
     <!-- 頁尾 -->
-    <footer class="site-footer">
+    <PrintBrand position="footer" />
+    <footer class="site-footer no-print">
       <span>眠手帳</span>
       <a class="footer-brand" href="https://kidnsleep.com" target="_blank" rel="noopener"
         >by KidnSleep</a
@@ -187,6 +189,7 @@ import AddBabyDialog from '@/components/AddBabyDialog.vue'
 import SleepRecordEditDialog from '@/components/SleepRecordEditDialog.vue'
 import EventRecordEditDialog from '@/components/EventRecordEditDialog.vue'
 import AppPageHeader from '@/components/ui/AppPageHeader.vue'
+import PrintBrand from '@/components/ui/PrintBrand.vue'
 import AppMenu from '@/components/ui/AppMenu.vue'
 import AppIcon from '@/components/ui/AppIcon.js'
 import DiarySwitcher from '@/components/ui/DiarySwitcher.vue'

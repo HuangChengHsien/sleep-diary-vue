@@ -1,0 +1,128 @@
+<!doctype html>
+<!--
+  眠手帳 社群分享預覽圖（og:image）設計原稿，1200×630。
+  輸出：public/og-image.png（index.html 的 og:image／twitter:image 指向它）。
+  重出方式（在 repo 根目錄）：
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --hide-scrollbars \
+      --window-size=1200,630 --virtual-time-budget=5000 \
+      --screenshot=public/og-image.png "file://$PWD/docs/design/og-image.html"
+  粉圓體只用在品牌字「眠手帳」（kidnsleep-brand skill）；只在這張圖渲染時載入，App 本身不載入任何 webfont。
+  色碼取自 tokens.css 淺色：紙 #FAF7F0、暖墨 #231C15、次要文字 #594F44、古銅金 #7B5D12、圖示金 #D4B36A。
+  文案改動前先跑 tw-medical-content-compliance skill（公開曝光內容）。
+-->
+<html lang="zh-Hant-TW">
+  <head>
+    <meta charset="utf-8" />
+    <link href="https://fonts.googleapis.com/css2?family=Huninn&display=block" rel="stylesheet" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        width: 1200px;
+        height: 630px;
+        overflow: hidden;
+        background: #faf7f0;
+        font-family: -apple-system, 'PingFang TC', 'Noto Sans TC', system-ui, sans-serif;
+        color: #231c15;
+      }
+      .card {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 64px;
+        height: 100%;
+        padding: 0 96px;
+        box-sizing: border-box;
+      }
+      .icon {
+        flex-shrink: 0;
+        width: 360px;
+        height: 360px;
+      }
+      .copy {
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+      }
+      .name {
+        margin: 0;
+        font-family: 'Huninn', -apple-system, 'PingFang TC', sans-serif;
+        font-weight: 400;
+        font-size: 112px;
+        line-height: 1;
+        letter-spacing: 4px;
+      }
+      .sub {
+        margin: 0;
+        font-size: 36px;
+        font-weight: 600;
+        color: #594f44;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin: 6px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      .chips li {
+        padding: 8px 18px;
+        border: 2px solid #7b5d12;
+        border-radius: 999px;
+        font-size: 24px;
+        font-weight: 600;
+        color: #523d0a;
+        background: #f5ecd4;
+      }
+      .foot {
+        position: absolute;
+        left: 96px;
+        right: 96px;
+        bottom: 40px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 22px;
+        color: #7b5d12;
+        letter-spacing: 0.5px;
+      }
+      .foot b {
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <!-- 幾何同 public/favicon.svg（小屋 Home）；改圖示時一起改 -->
+      <svg class="icon" viewBox="0 0 512 512" aria-hidden="true">
+        <circle cx="256" cy="256" r="190" fill="#231C15" />
+        <path
+          d="M 160 238 L 256 142 L 352 238 V 374 H 160 Z"
+          fill="none"
+          stroke="#FAF7F0"
+          stroke-width="28"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+        <path
+          d="M 242.0 234.9 A 56.0 56.0 0 1 0 307.1 300.0 A 46.2 46.2 0 0 1 242.0 234.9 Z"
+          fill="#FAF7F0"
+        />
+        <circle cx="358" cy="154" r="28" fill="#D4B36A" />
+      </svg>
+      <div class="copy">
+        <h1 class="name">眠手帳</h1>
+        <p class="sub">免登入的兒童青少年睡眠日誌</p>
+        <ul class="chips">
+          <li>不用註冊</li>
+          <li>資料只存在自己手機</li>
+          <li>可列印報告帶去門診</li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot">
+      <span>diary.kidnsleep.com</span>
+      <b>by KidnSleep</b>
+    </div>
+  </body>
+</html>
