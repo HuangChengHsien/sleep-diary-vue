@@ -13,6 +13,7 @@
         :disabled="isLoading"
         class="quick-event-btn"
       >
+        <AppIcon :name="button.icon" class="quick-event-icon" />
         {{ button.text }}
       </button>
     </div>
@@ -173,6 +174,9 @@ onMounted(() => {
 }
 
 .quick-event-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   min-height: var(--tap-min);
   background: transparent;
   color: var(--text);
@@ -184,6 +188,12 @@ onMounted(() => {
   font-size: 14px;
   transition: background 0.15s;
   white-space: nowrap;
+}
+
+.quick-event-icon {
+  flex-shrink: 0;
+  font-size: 16px;
+  color: var(--primary);
 }
 
 .quick-event-btn:hover:not(:disabled) {

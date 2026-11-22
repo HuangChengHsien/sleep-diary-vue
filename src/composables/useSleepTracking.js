@@ -28,9 +28,9 @@ export function useSleepTracking() {
 
   const sleepStatus = computed(() => {
     if (currentSleepSession.value.isSleeping) {
-      return { text: '目前狀態: 睡眠中... 💤', class: 'sleeping' }
+      return { text: '目前狀態: 睡眠中...', class: 'sleeping' }
     } else if (currentSleepSession.value.isInBed) {
-      return { text: '目前狀態: 已上床，準備入睡 🛏️', class: 'sleeping' }
+      return { text: '目前狀態: 已上床，準備入睡', class: 'sleeping' }
     } else {
       return { text: '目前狀態: 醒著', class: 'awake' }
     }
