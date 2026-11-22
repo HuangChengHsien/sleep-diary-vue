@@ -2,17 +2,24 @@
 // 週統計分析圖：把每日總睡眠依星期幾分組取平均。
 
 import { Chart } from './chart-setup.js'
-import { chartManager } from './chart-manager.js'
+import {
+  chartManager,
+  resolveRenderOptions,
+  animationOption,
+  CHART_FONT_FAMILY,
+} from './chart-manager.js'
+import { withAlpha } from '@/lib/chart-theme.js'
 import { drawNoDataMessage } from './no-data.js'
 
-export const renderWeeklyChart = (dailyData) => {
+export const renderWeeklyChart = (dailyData, options) => {
+  const { theme, animate } = resolveRenderOptions(options)
   const canvas = document.getElementById('weeklyCanvas')
   if (!canvas) return
   const ctx = canvas.getContext('2d')
   chartManager.destroyChart('weekly')
 
   if (!dailyData || dailyData.length === 0) {
-    drawNoDataMessage(ctx, canvas, '沒有週統計資料')
+    drawNoDataMessage(ctx, canvas, '沒有週統計資料', theme)
     return
   }
 
@@ -41,8 +48,8 @@ export const renderWeeklyChart = (dailyData) => {
         {
           label: '平均睡眠時長 (小時)',
           data: weeklyAverages,
-          backgroundColor: 'rgba(156, 39, 176, 0.8)',
-          borderColor: '#9C27B0',
+          backgroundColor: withAlpha(theme.series[0], 0.8),
+          borderColor: theme.series[0],
           borderWidth: 2,
         },
       ],
@@ -50,6 +57,7 @@ export const renderWeeklyChart = (dailyData) => {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      ...animationOption(animate),
       scales: {
         y: {
           beginAtZero: true,
@@ -62,7 +70,7 @@ export const renderWeeklyChart = (dailyData) => {
       plugins: {
         title: {
           display: true,
-          text: '📅 週統計分析',
+          text: '週統計分析',
         },
         legend: {
           display: false,
@@ -93,8 +101,8 @@ export const renderWeeklyChart = (dailyData) => {
                   const dataString = value.toFixed(1) + 'h'
                   const fontSize = 12
                   const fontStyle = 'bold'
-                  const fontFamily = 'Arial'
-                  ctx.fillStyle = '#CE93D8'
+                  const fontFamily = CHART_FONT_FAMILY
+                  ctx.fillStyle = theme.ink
                   ctx.font = `${fontStyle} ${fontSize}px ${fontFamily}`
                   ctx.textAlign = 'center'
                   ctx.textBaseline = 'bottom'

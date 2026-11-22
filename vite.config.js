@@ -32,12 +32,11 @@ export default defineConfig({
         short_name: '睡眠日誌',
         lang: 'zh-TW',
         description: '記錄與分析兒童青少年睡眠品質，資料完全儲存於本機裝置。',
-        // 兩者都維持 App 的夜色 #0A1020，不跟圖示的紙色走：
-        // theme_color 與 index.html 的 meta theme-color、頂部導覽列同色，狀態列不會斷層；
-        // background_color 是啟動畫面與 CSS 載入前的底色，多在睡前開啟，
-        // 用紙色會先閃一下亮白再轉暗。圖示自帶紙色方底，放在夜色上仍清楚。
-        theme_color: '#0A1020',
-        background_color: '#0A1020',
+        // manifest 只能放一個值，兩者都用深色 token --bg #14100C：
+        // background_color 是啟動畫面與 CSS 載入前的底色，多在睡前開啟，用紙色會先閃一下亮白。
+        // 實際狀態列顏色由 index.html 的 inline script 依淺色／深色主題動態改 meta theme-color。
+        theme_color: '#14100C',
+        background_color: '#14100C',
         display: 'standalone',
         scope: '/',
         start_url: '/',

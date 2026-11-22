@@ -1,11 +1,11 @@
 // src/composables/useDiaryUtils.spec.js
 // 純函式測試：涵蓋日期、時長、跨日等容易出錯的邊界情境。
-// UI／DOM／localStorage 相關（toggleTheme、applyTheme）刻意不測。
+// 主題相關邏輯已移到 src/lib/theme.js（見 theme.spec.js）。
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { useDiaryUtils } from './useDiaryUtils'
 
-// 每次呼叫都拿新的 utils（避免不同測試之間共用 currentTheme ref 造成干擾）
+// 每次呼叫都拿新的 utils
 const utils = () => useDiaryUtils()
 
 describe('calculateAge', () => {

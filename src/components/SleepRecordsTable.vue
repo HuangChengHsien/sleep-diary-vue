@@ -1,34 +1,37 @@
 <template>
   <div class="records-container">
-    <h2>🛏️ 睡眠記錄</h2>
+    <h2><AppIcon name="bed" class="title-icon" />睡眠記錄</h2>
 
     <!-- 篩選控制 -->
-    <div class="filter-controls">
+    <div class="filter-controls no-print">
       <label>查看記錄範圍: </label>
       <button
         @click="setFilter('7days')"
         :class="['filter-btn', 'btn-small', { active: currentFilter === '7days' }]"
+        :aria-pressed="currentFilter === '7days'"
       >
         7天內
       </button>
       <button
         @click="setFilter('14days')"
         :class="['filter-btn', 'btn-small', { active: currentFilter === '14days' }]"
+        :aria-pressed="currentFilter === '14days'"
       >
         14天內
       </button>
       <button
         @click="setFilter('all')"
         :class="['filter-btn', 'btn-small', { active: currentFilter === 'all' }]"
+        :aria-pressed="currentFilter === 'all'"
       >
         全部
       </button>
     </div>
 
     <!-- 生病、旅行等不具代表性的期間：整段排除於分析之外 -->
-    <div class="exclude-range">
+    <div class="exclude-range" :class="{ 'no-print': excludedPeriodList.length === 0 }">
       <span class="exclude-range-label">不列入分析的期間</span>
-      <div class="exclude-range-controls">
+      <div class="exclude-range-controls no-print">
         <input type="date" v-model="excludeStart" aria-label="排除起始日期" />
         <span class="exclude-range-sep">～</span>
         <input type="date" v-model="excludeEnd" aria-label="排除結束日期" />
@@ -39,20 +42,25 @@
           恢復
         </button>
       </div>
-      <span v-if="rangeReady" class="exclude-range-hint">
+      <span v-if="rangeReady" class="exclude-range-hint no-print">
         將影響 {{ recordsInSelectedRange }} 筆記錄
       </span>
 
       <!-- 排除是逐筆存的，這裡把它反推成期間，否則排掉幾段之後就認不出來也無法單獨恢復 -->
       <div v-if="excludedPeriodList.length > 0" class="excluded-periods">
         <span class="excluded-periods-label">目前排除中：</span>
-        <span v-for="period in excludedPeriodList" :key="period.startDate" class="excluded-period">
+        <span
+          v-for="period in excludedPeriodList"
+          :key="period.startDate"
+          class="excluded-period print-exact"
+        >
           {{ formatPeriodLabel(period) }}
           <small>{{ period.recordCount }} 筆</small>
           <button
             @click="restorePeriod(period)"
-            class="restore-period-btn"
+            class="restore-period-btn no-print"
             :title="`恢復 ${period.startDate} ~ ${period.endDate}`"
+            :aria-label="`恢復 ${period.startDate} ~ ${period.endDate}`"
           >
             ✕
           </button>
@@ -75,7 +83,7 @@
               <th class="col-count hide-mobile">夜間醒來次數</th>
               <th class="col-notes hide-mobile">備註</th>
               <th class="col-analysis hide-mobile">列入分析</th>
-              <th class="col-actions">操作</th>
+              <th class="col-actions no-print">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -108,7 +116,7 @@
                   {{ record.isExcluded ? '已排除' : '計入' }}
                 </button>
               </td>
-              <td class="col-actions">
+              <td class="col-actions no-print">
                 <button
                   @click="handleEdit(record)"
                   class="edit-btn btn-small"
@@ -142,6 +150,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useSleepTracking } from '@/composables/useSleepTracking'
+import AppIcon from '@/components/ui/AppIcon.js'
 import {
   isExcludedFromAnalysis,
   recordsInDateRange,
@@ -294,33 +303,40 @@ onMounted(() => {
 .records-container {
   max-width: 100%;
   overflow: hidden;
-  background: #131B33;
-  border: 1px solid rgba(241,237,224,0.08);
-  border-radius: 14px;
-  padding: 20px;
-  margin-bottom: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+  padding: var(--space-5);
+  margin-bottom: var(--space-5);
   box-sizing: border-box;
-  font-family: -apple-system, 'PingFang TC', 'Helvetica Neue', system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
+  color: var(--text);
 }
 
 .records-container h2 {
-  color: #F1EDE0;
-  border-bottom: 2px solid rgba(159,212,212,0.4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
   padding-bottom: 10px;
   margin-top: 0;
-  margin-bottom: 20px;
+  margin-bottom: var(--space-5);
   font-size: 18px;
   font-weight: 600;
 }
 
+.title-icon {
+  color: var(--primary);
+}
+
 /* ── Filter controls ──────────────────────────────── */
 .filter-controls {
-  background: rgba(241,237,224,0.04);
-  border: 1px solid rgba(241,237,224,0.08);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   padding: 12px 16px;
-  border-radius: 10px;
-  margin-bottom: 16px;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -330,31 +346,28 @@ onMounted(() => {
 .filter-controls label {
   font-size: 13px;
   font-weight: 500;
-  color: rgba(241,237,224,0.7);
+  color: var(--text-2);
   white-space: nowrap;
 }
 
+/* 在 --surface-2 底上：hover 改邊框，不再疊同色底 */
 .filter-btn {
   background: transparent;
-  color: rgba(241,237,224,0.45);
-  border: 1px solid rgba(241,237,224,0.1);
+  color: var(--text-2);
+  border: 1px solid var(--border);
   border-radius: 100px;
-  transition: all 0.15s;
 }
 
 .filter-btn:hover {
-  background: rgba(241,237,224,0.05);
-  color: rgba(241,237,224,0.7);
+  border-color: var(--border-strong);
+  color: var(--text);
 }
 
 .filter-btn.active {
-  background: rgba(159,212,212,0.1);
-  border-color: rgba(159,212,212,0.25);
-  color: #9FD4D4;
-}
-
-.filter-btn.active:hover {
-  background: rgba(159,212,212,0.15);
+  background: var(--primary-container);
+  border-color: var(--primary);
+  color: var(--on-primary-container);
+  font-weight: 600;
 }
 
 /* ── Table ────────────────────────────────────────── */
@@ -362,8 +375,8 @@ onMounted(() => {
   width: 100%;
   max-width: 100%;
   margin: 4px 0 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(241,237,224,0.08);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
   overflow: hidden;
   box-sizing: border-box;
 }
@@ -377,21 +390,20 @@ onMounted(() => {
 table {
   width: 100%;
   border-collapse: collapse;
-  background: #131B33;
+  background: var(--surface);
   min-width: 700px;
   box-sizing: border-box;
 }
 
 table th {
-  background: rgba(241,237,224,0.04);
-  color: rgba(241,237,224,0.5);
+  background: var(--surface-2);
+  color: var(--text-2);
   font-size: 11px;
   font-weight: 500;
-  font-family: inherit;
   letter-spacing: 0.5px;
   text-align: left;
   padding: 10px 12px;
-  border-bottom: 1px solid rgba(241,237,224,0.07);
+  border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -400,8 +412,8 @@ table th {
 table td {
   padding: 10px 12px;
   font-size: 13px;
-  color: rgba(241,237,224,0.75);
-  border-bottom: 1px solid rgba(241,237,224,0.05);
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
   vertical-align: middle;
   word-wrap: break-word;
   word-break: break-word;
@@ -410,7 +422,7 @@ table td {
 table tr:last-child td { border-bottom: none; }
 
 table tr:hover td {
-  background: rgba(241,237,224,0.04);
+  background: var(--surface-2);
 }
 
 /* ── 區間排除 ─────────────────────────────────────── */
@@ -419,13 +431,13 @@ table tr:hover td {
   flex-wrap: wrap;
   margin-bottom: 12px;
   padding: 10px 14px;
-  background: rgba(241,237,224,0.03);
-  border: 1px solid rgba(241,237,224,0.08);
-  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
 }
 
 .exclude-range-label {
-  font-size: 12px; color: rgba(241,237,224,0.55);
+  font-size: 12px; color: var(--text-2);
 }
 
 .exclude-range-controls {
@@ -433,83 +445,82 @@ table tr:hover td {
 }
 
 .exclude-range-controls input[type='date'] {
-  background: #1A2340;
-  color: #F1EDE0;
-  border: 1px solid rgba(241,237,224,0.12);
-  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
   padding: 6px 10px;
-  min-height: 36px;
-  font-size: 14px; font-family: inherit;
+  min-height: var(--tap-min);
+  font: inherit;
+  font-size: 16px;
 }
 
-.exclude-range-sep { color: rgba(241,237,224,0.35); font-size: 12px; }
+.exclude-range-sep { color: var(--text-3); font-size: 12px; }
 
 .excluded-periods {
   display: flex; align-items: center; gap: 6px;
   flex-wrap: wrap;
   width: 100%;
   padding-top: 8px;
-  border-top: 1px solid rgba(241,237,224,0.07);
+  border-top: 1px solid var(--border);
 }
 
 .excluded-periods-label {
-  font-size: 11px; color: rgba(241,237,224,0.4);
+  font-size: 11px; color: var(--text-3);
 }
 
+/* 已排除期間：中性標記（不是警告），虛線邊框 */
 .excluded-period {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 3px 4px 3px 10px;
   border-radius: 100px;
-  background: rgba(212,179,106,0.1);
-  border: 1px solid rgba(212,179,106,0.2);
-  color: #D4B36A;
+  background: var(--surface-2);
+  border: 1px dashed var(--border-strong);
+  color: var(--text-2);
   font-size: 12px;
-  font-family: inherit;
 }
 
 .excluded-period small {
-  color: rgba(212,179,106,0.6);
+  color: var(--text-3);
   font-size: 10px;
 }
 
 .restore-period-btn {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 20px; height: 20px;
+  width: 24px; height: 24px;
   padding: 0; margin: 0;
   border: none; border-radius: 50%;
-  background: rgba(212,179,106,0.15);
-  color: #D4B36A;
+  background: transparent;
+  color: var(--text-2);
   font-size: 11px; line-height: 1; cursor: pointer;
   font-family: inherit;
 }
 
-.restore-period-btn:hover { background: rgba(212,179,106,0.3); }
+.restore-period-btn:hover {
+  background: var(--surface);
+  color: var(--text);
+}
 
 .exclude-range-hint {
-  font-size: 11px; color: rgba(241,237,224,0.4);
-  font-family: inherit;
+  font-size: 11px; color: var(--text-3);
 }
 
-.exclude-btn {
-  background: rgba(212,179,106,0.15);
-  color: #D4B36A;
-  border: 1px solid rgba(212,179,106,0.2);
-}
-
+/* 排除／恢復都不是破壞性操作：外框按鈕；在 --surface-2 底上 hover 改用 --surface 底 */
+.exclude-btn,
 .restore-btn {
-  background: rgba(159,212,212,0.12);
-  color: #9FD4D4;
-  border: 1px solid rgba(159,212,212,0.2);
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border-strong);
 }
 
 .exclude-btn:hover:not(:disabled),
-.restore-btn:hover:not(:disabled) { opacity: 0.8; }
+.restore-btn:hover:not(:disabled) { background: var(--surface); }
 
 /* 被排除的列：淡化但仍可讀，必須看得到才能恢復 */
 table tr.excluded td {
   opacity: 0.45;
   text-decoration: line-through;
-  text-decoration-color: rgba(241,237,224,0.35);
+  text-decoration-color: var(--text-3);
 }
 
 table tr.excluded td.col-analysis,
@@ -519,19 +530,22 @@ table tr.excluded td.col-actions {
 }
 
 .toggle-exclude-btn {
-  background: rgba(159,212,212,0.12);
-  color: #9FD4D4;
-  border: 1px solid rgba(159,212,212,0.2);
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border-strong);
   min-width: 52px;
 }
 
+.toggle-exclude-btn:hover:not(:disabled) { background: var(--surface-2); }
+
+/* 已排除：與「已排除期間」同一套中性標記 */
 .toggle-exclude-btn.off {
-  background: rgba(241,237,224,0.06);
-  color: rgba(241,237,224,0.45);
-  border-color: rgba(241,237,224,0.12);
+  background: var(--surface-2);
+  color: var(--text-2);
+  border-style: dashed;
 }
 
-.toggle-exclude-btn:hover:not(:disabled) { opacity: 0.8; }
+.toggle-exclude-btn.off:hover:not(:disabled) { color: var(--text); }
 
 /* ── Column widths ────────────────────────────────── */
 .col-analysis { width: 9%; }
@@ -545,65 +559,69 @@ table tr.excluded td.col-actions {
 /* ── States ───────────────────────────────────────── */
 .no-data {
   text-align: center;
-  color: rgba(241,237,224,0.3);
+  color: var(--text-3);
   font-style: italic;
   padding: 40px 20px;
 }
 
 /* ── Buttons ──────────────────────────────────────── */
 .btn-small {
-  padding: 4px 8px;
-  font-size: 11px;
-  border: none;
-  border-radius: 6px;
+  min-height: var(--tap-min);
+  padding: 6px 12px;
+  font-size: 14px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  margin: 0 2px;
+  margin: 2px;
   font-family: inherit;
-  transition: opacity 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 }
 
 .btn-small:disabled {
-  opacity: 0.4;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
+/* 編輯＝次要操作（外框） */
 .edit-btn {
-  background: rgba(212,179,106,0.15);
-  color: #D4B36A;
-  border: 1px solid rgba(212,179,106,0.2);
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border-strong);
 }
 
-.edit-btn:hover:not(:disabled) { opacity: 0.8; }
+.edit-btn:hover:not(:disabled) { background: var(--surface-2); }
 
+/* 刪除＝破壞性操作，唯一用紅色的地方 */
 .delete-btn {
-  background: rgba(220,80,80,0.12);
-  color: #E07070;
-  border: 1px solid rgba(220,80,80,0.2);
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
 }
 
-.delete-btn:hover:not(:disabled) { opacity: 0.8; }
+.delete-btn:hover:not(:disabled) { background: var(--danger-container); }
 
 /* ── Footer ───────────────────────────────────────── */
 .record-count {
   text-align: center;
-  color: rgba(241,237,224,0.35);
+  color: var(--text-3);
   font-size: 12px;
   margin-top: 10px;
-  font-family: inherit;
 }
 
 .filter-info {
-  color: #9FD4D4;
+  color: var(--text-2);
   font-weight: 500;
 }
 
 /* ── RWD ──────────────────────────────────────────── */
 @media (max-width: 768px) {
+  /* 表格內的按鈕在窄螢幕縮小（仍 ≥ 36px，高於 WCAG 2.5.8 的 24px），避免每列被撐得很高 */
+  .btn-small { min-height: 36px; padding: 4px 10px; font-size: 13px; }
   .records-container { padding: 14px; }
   .filter-controls { flex-direction: column; align-items: flex-start; gap: 8px; }
   table { min-width: 500px; }
   table th, table td { padding: 8px 8px; font-size: 11px; }
-  .btn-small { padding: 3px 6px; font-size: 10px; }
   .hide-mobile { display: none; }
 }
 
@@ -611,7 +629,30 @@ table tr.excluded td.col-actions {
   .records-container { padding: 10px; }
   table { min-width: 400px; }
   table th, table td { padding: 6px 6px; font-size: 10px; }
-  .btn-small { padding: 2px 4px; font-size: 9px; }
   .col-date { width: 15%; min-width: 60px; }
+}
+
+/* ── 列印：整張表攤開印（不捲動、不截斷），操作欄已用 .no-print 藏起來 ── */
+@media print {
+  .records-container,
+  .table-container,
+  .table-responsive-wrapper {
+    overflow: visible;
+    box-shadow: none;
+  }
+
+  table { min-width: 0; }
+
+  table th { position: static; }
+
+  .hide-mobile { display: table-cell; }
+
+  .toggle-exclude-btn,
+  .toggle-exclude-btn.off {
+    min-height: 0;
+    padding: 0;
+    border: none;
+    background: none;
+  }
 }
 </style>

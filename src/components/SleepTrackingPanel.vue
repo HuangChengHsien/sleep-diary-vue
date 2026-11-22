@@ -1,6 +1,7 @@
 <template>
-  <div class="sleep-controls">
-    <h2>😴 睡眠記錄</h2>
+  <!-- 整塊都是操作（按鈕＋表單），紙本不印 -->
+  <div class="sleep-controls no-print">
+    <h2><AppIcon name="moon" class="title-icon" />睡眠記錄</h2>
     <p class="info-box">入睡時間指的是真正睡著的時間。上床時間是開始準備睡覺的時間。</p>
 
     <!-- 睡眠狀態顯示 -->
@@ -16,7 +17,8 @@
         :disabled="isLoading"
         class="sleep-btn bedtime-btn"
       >
-        🛏️ 上床
+        <AppIcon name="bed" />
+        上床
       </button>
 
       <button
@@ -25,16 +27,18 @@
         :disabled="isLoading"
         class="sleep-btn"
       >
-        😴 入睡
+        <AppIcon name="moon" />
+        入睡
       </button>
 
       <button
         v-show="buttonStates.showWakeBtn"
         @click="handleSetWakeTime"
         :disabled="isLoading"
-        class="wake-btn"
+        class="sleep-btn wake-btn"
       >
-        😊 起床
+        <AppIcon name="sunrise" />
+        起床
       </button>
     </div>
 
@@ -81,7 +85,9 @@
         </div>
       </div>
 
-      <button @click="handleAddManualRecord" :disabled="isLoading">💾 儲存睡眠記錄</button>
+      <button @click="handleAddManualRecord" :disabled="isLoading" class="btn-primary save-btn">
+        儲存睡眠記錄
+      </button>
     </div>
   </div>
 </template>
@@ -91,6 +97,7 @@ import { ref, onMounted, watch } from 'vue'
 import { useSleepTracking } from '@/composables/useSleepTracking'
 import { useDiaryUtils } from '@/composables/useDiaryUtils'
 import { checkSleepRecordInput } from '@/lib/sleep-record-input.js'
+import AppIcon from '@/components/ui/AppIcon.js'
 
 const props = defineProps({
   currentBabyId: {
@@ -234,114 +241,115 @@ onMounted(() => {
 <style scoped>
 /* ── Panel ──────────────────────────────────────── */
 .sleep-controls {
-  background: #131B33;
-  border: 1px solid rgba(241,237,224,0.08);
-  border-radius: 14px;
-  padding: 20px;
-  margin-bottom: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+  padding: var(--space-5);
+  margin-bottom: var(--space-5);
   box-sizing: border-box;
-  font-family: -apple-system, 'PingFang TC', 'Helvetica Neue', system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
+  color: var(--text);
 }
 
 .sleep-controls h2 {
-  color: #F1EDE0;
-  border-bottom: 2px solid rgba(159,212,212,0.4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
   padding-bottom: 10px;
   margin-top: 0;
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
   font-size: 18px;
   font-weight: 600;
 }
 
-.info-box {
-  background: rgba(159,212,212,0.06);
-  border: 1px solid rgba(159,212,212,0.2);
-  border-radius: 8px;
-  padding: 10px 14px;
-  margin: 0 0 16px;
-  font-size: 13px;
-  color: rgba(159,212,212,0.85);
+.title-icon {
+  color: var(--primary);
 }
 
-/* ── Sleep status ───────────────────────────────── */
+.info-box {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin: 0 0 var(--space-4);
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+/* ── Sleep status（.sleeping 由 useSleepTracking 的 sleepStatus.class 套上；醒著用預設中性樣式） ── */
 .sleep-status {
   font-size: 15px;
   font-weight: 600;
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   text-align: center;
+  background: var(--surface-2);
+  color: var(--text-2);
 }
 
-.sleeping {
-  background: rgba(159,212,212,0.1);
-  color: #9FD4D4;
-  border: 1px solid rgba(159,212,212,0.2);
+.sleep-status.sleeping {
+  background: var(--primary-container);
+  color: var(--on-primary-container);
 }
 
-.awake {
-  background: rgba(212,179,106,0.1);
-  color: #D4B36A;
-  border: 1px solid rgba(212,179,106,0.2);
-}
-
-/* ── Quick action buttons ───────────────────────── */
+/* ── Quick action buttons：上床、入睡＝主色，起床＝輔色 ── */
 .sleep-quick-actions {
   display: flex;
   gap: 10px;
   justify-content: center;
-  margin-bottom: 20px;
+  margin-bottom: var(--space-5);
   flex-wrap: wrap;
 }
 
 .sleep-btn {
-  background: rgba(159,212,212,0.12);
-  color: #9FD4D4;
-  border: 1px solid rgba(159,212,212,0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--tap-min);
+  background: var(--primary);
+  color: var(--on-primary);
+  border: none;
   padding: 10px 20px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  font-size: 14px;
-  font-family: inherit;
-  transition: all 0.15s;
-}
-
-.bedtime-btn {
-  background: rgba(176,159,212,0.12);
-  color: #B09FD4;
-  border-color: rgba(176,159,212,0.2);
-}
-
-.wake-btn {
-  background: rgba(212,179,106,0.12);
-  color: #D4B36A;
-  border-color: rgba(212,179,106,0.2);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  transition: background 0.15s;
 }
 
 .sleep-btn:hover:not(:disabled) {
-  opacity: 0.85;
-  transform: translateY(-1px);
+  background: var(--primary-hover);
+}
+
+.wake-btn,
+.wake-btn:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
 .sleep-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
 /* ── Manual form ─────────────────────────────────── */
 .manual-sleep-form {
-  background: rgba(241,237,224,0.03);
-  border: 1px solid rgba(241,237,224,0.08);
-  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   padding: 18px;
-  margin-top: 16px;
+  margin-top: var(--space-4);
 }
 
 .manual-sleep-form h3 {
   margin-top: 0;
   margin-bottom: 14px;
-  color: rgba(241,237,224,0.6);
+  color: var(--text-2);
   font-size: 14px;
   font-weight: 500;
 }
@@ -363,44 +371,67 @@ onMounted(() => {
   margin-bottom: 5px;
   font-size: 12px;
   font-weight: 500;
-  color: rgba(241,237,224,0.5);
+  color: var(--text-2);
 }
 
 .form-group input {
   width: 100%;
+  min-height: var(--tap-min);
   padding: 8px 10px;
-  background: #1A2340;
-  color: #F1EDE0;
-  border: 1px solid rgba(241,237,224,0.1);
-  border-radius: 7px;
-  font-size: 13px;
-  font-family: inherit;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 16px;
   box-sizing: border-box;
-  color-scheme: dark;
   transition: border-color 0.2s;
 }
 
 .form-group input:focus {
-  outline: none;
-  border-color: rgba(159,212,212,0.35);
+  border-color: var(--primary);
 }
 
+/* 次要操作：外框按鈕 */
 .btn-small {
-  padding: 6px 10px;
-  font-size: 12px;
-  margin-left: 6px;
-  background: rgba(241,237,224,0.07);
-  color: rgba(241,237,224,0.55);
-  border: 1px solid rgba(241,237,224,0.1);
-  border-radius: 6px;
+  min-height: var(--tap-min);
+  padding: 6px 14px;
+  font-size: 14px;
+  margin-top: 6px;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-family: inherit;
-  transition: all 0.15s;
+  transition: background 0.15s;
 }
 
 .btn-small:hover {
-  background: rgba(241,237,224,0.12);
-  color: rgba(241,237,224,0.85);
+  background: var(--surface-2);
+}
+
+.btn-primary {
+  min-height: var(--tap-min);
+  padding: 10px 18px;
+  background: var(--primary);
+  color: var(--on-primary);
+  border: none;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* ── RWD ────────────────────────────────────────── */

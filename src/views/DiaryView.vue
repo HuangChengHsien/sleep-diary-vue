@@ -1,75 +1,23 @@
 <template>
-  <!-- ⚠️ 改版說明：
-    · 移除 toggleTheme / isDarkMode / themeIcon（全 App 統一深色，無需切換）
-    · 移除 dark-mode.css 的 body class 邏輯（見 useDiaryUtils.js，可保留函式但不呼叫）
-    · <template> 與 <script> 的業務邏輯完全保留，只換視覺層
-  -->
+  <!-- 顏色一律取自 tokens.css（淺色／深色跟隨系統），元件內不寫死色碼 -->
   <div class="diary-container">
-    <!-- 頂部導覽欄 -->
-    <div class="top-bar">
-      <div class="top-bar-inner">
-        <div class="top-bar-left">
-          <button @click="goToDashboard" class="nav-btn icon-btn" title="回主控台">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M3 12L12 3l9 9M5 10v10a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V10"
-                stroke="currentColor"
-                stroke-width="1.6"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-          </button>
-          <span class="top-bar-title">睡眠日誌</span>
-        </div>
+    <AppPageHeader title="睡眠日誌">
+      <template #actions>
+        <AppMenu :items="menuItems" @select="onMenuSelect" />
+      </template>
+      <DiarySwitcher :baby-id="currentBabyId || ''" />
+    </AppPageHeader>
+    <input
+      ref="restoreFileInput"
+      type="file"
+      accept=".json"
+      class="file-input"
+      tabindex="-1"
+      aria-hidden="true"
+      @change="handleRestoreFile"
+    />
 
-        <div class="top-bar-right">
-          <button @click="backupCurrentBaby" class="nav-btn" title="備份">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"
-                stroke="currentColor"
-                stroke-width="1.6"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-            備份
-          </button>
-          <button @click="showPrintReport" class="nav-btn" title="列印">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"
-                stroke="currentColor"
-                stroke-width="1.6"
-                stroke-linecap="round"
-              />
-              <rect
-                x="6"
-                y="14"
-                width="12"
-                height="8"
-                rx="1"
-                stroke="currentColor"
-                stroke-width="1.6"
-              />
-            </svg>
-            列印
-          </button>
-          <button @click="triggerRestore" class="nav-btn">還原</button>
-          <input
-            ref="restoreFileInput"
-            type="file"
-            accept=".json"
-            @change="handleRestoreFile"
-            style="display: none"
-          />
-        </div>
-      </div>
-
-      <!-- 用戶資訊列 -->
-      <div class="user-bar">{{ userInfoText }}</div>
-    </div>
+    <p class="local-note">{{ userInfoText }}</p>
 
     <StatusMessage v-if="statusMessage" :message="statusMessage" :type="statusType" />
 
@@ -77,20 +25,21 @@
     <div class="section-card">
       <div class="section-header">
         <span class="section-mono">PATIENT</span>
-        <div class="case-actions">
-          <button @click="showAddBabyDialog" :disabled="isLoading" class="pill-btn cyan">
-            + 新增個案
+        <div class="case-actions no-print">
+          <button @click="showAddBabyDialog" :disabled="isLoading" class="pill-btn btn-primary">
+            <AppIcon name="plus" />
+            新增個案
           </button>
           <button
             @click="showDeleteBabyDialog"
-            class="pill-btn danger"
+            class="pill-btn btn-danger"
             :disabled="!currentBabyId || isLoading"
           >
             刪除
           </button>
           <router-link
             :to="`/analysis?babyId=${currentBabyId}`"
-            class="pill-btn"
+            class="pill-btn btn-outline"
             :class="{ disabled: !currentBabyId }"
           >
             查看分析 →
@@ -111,10 +60,7 @@
 
       <!-- 無個案時的引導提示 -->
       <div v-if="!isLoading && babyList.length === 0" class="empty-hint">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="flex-shrink:0">
-          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
-          <path d="M12 8v4M12 16h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-        </svg>
+        <AppIcon name="info" class="empty-hint-icon" />
         尚無個案，請點擊上方「+ 新增個案」按鈕建立第一位個案。
       </div>
     </div>
@@ -172,7 +118,7 @@
       />
 
       <!-- 分析入口 -->
-      <div class="analysis-cta">
+      <div class="analysis-cta no-print">
         <router-link
           v-if="currentBabyId"
           :to="`/analysis?babyId=${currentBabyId}`"
@@ -196,7 +142,7 @@
       <span>製作者：黃正憲醫師</span>
     </footer>
 
-    <!-- Dialogs（保留原有） -->
+    <!-- Dialogs（各自的遮罩已標 .no-print） -->
     <AddBabyDialog
       v-if="showAddBaby"
       @close="showAddBaby = false"
@@ -224,19 +170,13 @@
   </div>
 </template>
 
-<!-- ════════════════════════════════════════════════════
-     SCRIPT：與原版完全相同，僅移除 dark mode 相關
-     · 移除從 useDiaryUtils 解構的: toggleTheme, isDarkMode, themeIcon
-     · 移除 return 中的同名項目
-     · 若 useDiaryUtils 仍 export 這些，保留即可，只是不再用於 template
-     ════════════════════════════════════════════════════ -->
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { useBabyManagement } from '@/composables/useBabyManagement'
 import { useSleepTracking } from '@/composables/useSleepTracking'
 import { useEventTracking } from '@/composables/useEventTracking'
 import { useDiaryUtils } from '@/composables/useDiaryUtils'
+import { useThemeMenu } from '@/composables/useThemeMenu'
 
 import StatusMessage from '@/components/StatusMessage.vue'
 import SleepTrackingPanel from '@/components/SleepTrackingPanel.vue'
@@ -246,8 +186,10 @@ import EventRecordsTable from '@/components/EventRecordsTable.vue'
 import AddBabyDialog from '@/components/AddBabyDialog.vue'
 import SleepRecordEditDialog from '@/components/SleepRecordEditDialog.vue'
 import EventRecordEditDialog from '@/components/EventRecordEditDialog.vue'
-
-const router = useRouter()
+import AppPageHeader from '@/components/ui/AppPageHeader.vue'
+import AppMenu from '@/components/ui/AppMenu.vue'
+import AppIcon from '@/components/ui/AppIcon.js'
+import DiarySwitcher from '@/components/ui/DiarySwitcher.vue'
 
 const {
   currentBabyId,
@@ -275,6 +217,7 @@ const { removeSleepRecord, setSleepRecordExcluded, setSleepRecordsExcludedInRang
   useSleepTracking()
 
 const { formatDuration, generateBackupFilename } = useDiaryUtils()
+const { themeMenuItems, handleThemeSelect } = useThemeMenu()
 
 // 響應式數據
 const statusMessage = ref('')
@@ -285,6 +228,20 @@ const editingEventRecord = ref(null)
 const restoreFileInput = ref(null)
 
 const userInfoText = computed(() => '資料儲存於本機裝置，完全離線，無需帳號')
+
+// 頁首「更多」選單：備份、列印、還原，再接外觀（跟隨系統／淺色／深色）
+const menuItems = computed(() => [
+  { id: 'backup', label: '備份', icon: 'download' },
+  { id: 'print', label: '列印', icon: 'printer' },
+  { id: 'restore', label: '還原', icon: 'upload' },
+  ...themeMenuItems.value,
+])
+const onMenuSelect = (id) => {
+  if (handleThemeSelect(id)) return
+  if (id === 'backup') backupCurrentBaby()
+  else if (id === 'print') showPrintReport()
+  else if (id === 'restore') triggerRestore()
+}
 
 const todaySummary = computed(() => calculateTodaySummary(eventRecords.value, sleepRecords.value))
 
@@ -335,8 +292,6 @@ const showDeleteBabyDialog = async () => {
     }
   }
 }
-
-const goToDashboard = () => router.push('/diary')
 
 const handleEditSleepRecord = (record) => {
   editingSleepRecord.value = record
@@ -495,117 +450,40 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* ── Design tokens ──────────────────────────────── */
 .diary-container {
+  width: 100%;
   min-height: 100vh;
-  background: #0a1020;
-  background-image: radial-gradient(ellipse at 70% 0%, rgba(212, 179, 106, 0.05), transparent 50%);
-  color: #f1ede0;
-  font-family: -apple-system, 'PingFang TC', 'Helvetica Neue', system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
+  background: var(--bg);
+  color: var(--text);
   padding-bottom: 60px;
 }
 
-/* ── Top bar ──────────────────────────────────── */
-.top-bar {
-  background: rgba(10, 16, 32, 0.9);
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
-  border-bottom: 1px solid rgba(241, 237, 224, 0.08);
-  position: sticky;
-  top: 0;
-  z-index: 100;
+/* 還原用的檔案選擇器：由選單「還原」觸發，畫面上不顯示 */
+.file-input {
+  display: none;
 }
 
-.top-bar-inner {
+.local-note {
   max-width: 960px;
   margin: 0 auto;
-  padding: 12px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.top-bar-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.top-bar-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: #f1ede0;
-  letter-spacing: -0.2px;
-}
-
-.top-bar-right {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.nav-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 8px 14px;
-  min-height: 40px;
-  background: rgba(241, 237, 224, 0.05);
-  color: rgba(241, 237, 224, 0.6);
-  border: 1px solid rgba(241, 237, 224, 0.1);
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 13px;
-  font-family: inherit;
-  transition:
-    background 0.2s,
-    color 0.2s;
-  white-space: nowrap;
-}
-
-.nav-btn:hover {
-  background: rgba(241, 237, 224, 0.1);
-  color: #f1ede0;
-}
-.nav-btn.icon-btn {
-  padding: 8px 12px;
-}
-.nav-btn.logout {
-  color: rgba(212, 179, 106, 0.7);
-  border-color: rgba(212, 179, 106, 0.15);
-}
-.nav-btn.logout:hover {
-  background: rgba(212, 179, 106, 0.1);
-  color: #d4b36a;
-}
-
-.user-bar {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 5px 20px 8px;
-  font-size: 11px;
-  color: rgba(241, 237, 224, 0.3);
-  font-family: inherit;
-  letter-spacing: 0.3px;
-  border-top: 1px solid rgba(241, 237, 224, 0.04);
+  padding: var(--space-2) var(--space-5) 0;
+  font-size: 0.75rem;
+  color: var(--text-3);
 }
 
 /* ── Section card ────────────────────────────── */
 .section-card {
   max-width: 960px;
-  margin: 20px auto 0;
-  padding: 0 20px;
+  margin: var(--space-4) auto 0;
+  padding: 0 var(--space-5);
 }
 
 .section-card > * {
-  background: #131b33;
-  border: 1px solid rgba(241, 237, 224, 0.08);
-  border-radius: 16px;
-  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+  padding: var(--space-4);
 }
 
 .section-header {
@@ -614,14 +492,13 @@ onMounted(async () => {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 10px;
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .section-mono {
-  font-family: inherit;
   font-size: 10px;
   letter-spacing: 2px;
-  color: #9fd4d4;
+  color: var(--text-2);
   text-transform: uppercase;
 }
 
@@ -631,58 +508,82 @@ onMounted(async () => {
   flex-wrap: wrap;
 }
 
+/* ── 按鈕：主要＝--primary、次要＝外框、刪除＝--danger ── */
 .pill-btn {
-  padding: 9px 18px;
-  min-height: 44px;
-  border-radius: 100px;
-  font-size: 14px;
-  font-weight: 500;
-  font-family: inherit;
-  cursor: pointer;
-  text-decoration: none;
   display: inline-flex;
   align-items: center;
-  transition: opacity 0.2s;
-  background: rgba(241, 237, 224, 0.06);
-  color: rgba(241, 237, 224, 0.6);
-  border: 1px solid rgba(241, 237, 224, 0.1);
+  gap: 6px;
+  padding: 9px 18px;
+  min-height: var(--tap-min);
+  border-radius: 100px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 }
 
-.pill-btn.cyan {
-  background: rgba(159, 212, 212, 0.1);
-  color: #9fd4d4;
-  border-color: rgba(159, 212, 212, 0.2);
+.btn-primary {
+  background: var(--primary);
+  color: var(--on-primary);
+  border: 1px solid var(--primary);
 }
 
-.pill-btn.danger {
-  background: rgba(212, 88, 88, 0.08);
-  color: rgba(220, 120, 120, 0.8);
-  border-color: rgba(212, 88, 88, 0.15);
+.btn-primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+}
+
+.btn-outline:hover {
+  background: var(--surface-2);
+}
+
+.btn-danger {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--danger-container);
 }
 
 .pill-btn:disabled,
 .pill-btn.disabled {
-  opacity: 0.35;
+  opacity: 0.45;
   cursor: not-allowed;
+}
+
+/* router-link 沒有 disabled 屬性，靠 pointer-events 擋點擊 */
+.pill-btn.disabled {
   pointer-events: none;
 }
 
 .case-select {
   width: 100%;
-  background: #1a2340;
-  border: 1px solid rgba(241, 237, 224, 0.1);
-  border-radius: 10px;
-  color: #f1ede0;
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font: inherit;
   font-size: 16px;
   padding: 14px 16px;
   min-height: 52px;
-  font-family: inherit;
   appearance: none;
   cursor: pointer;
 }
 
 .case-select:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
@@ -690,95 +591,99 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 12px;
+  margin-top: var(--space-3);
   padding: 14px 16px;
-  background: rgba(159, 212, 212, 0.06);
-  border: 1px dashed rgba(159, 212, 212, 0.25);
-  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
   font-size: 15px;
-  color: rgba(159, 212, 212, 0.75);
+  color: var(--text-2);
   line-height: 1.5;
+}
+
+.empty-hint-icon {
+  flex-shrink: 0;
+  font-size: 20px;
 }
 
 /* ── Main content ────────────────────────────── */
 .main-content {
   max-width: 960px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 var(--space-5);
 }
 
-/* ── Section label ───────────────────────────── */
 .section-label {
-  font-family: inherit;
   font-size: 10px;
   letter-spacing: 2px;
-  color: rgba(241, 237, 224, 0.35);
+  color: var(--text-3);
   text-transform: uppercase;
-  padding: 20px 0 8px;
+  padding: var(--space-5) 0 var(--space-2);
 }
 
 /* ── Summary grid ────────────────────────────── */
 .summary-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-bottom: 20px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
 }
 
 .sum-card {
-  background: #131b33;
-  border: 1px solid rgba(241, 237, 224, 0.08);
-  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
   padding: 14px 12px;
   text-align: center;
 }
 
 .sum-val {
-  font-family: inherit;
   font-size: 22px;
   font-weight: 500;
-  color: #f1ede0;
+  color: var(--text);
   letter-spacing: -0.5px;
   line-height: 1;
 }
 
 .sum-key {
   font-size: 13px;
-  color: rgba(241, 237, 224, 0.4);
+  color: var(--text-3);
   margin-top: 6px;
   line-height: 1.3;
 }
 
-/* ── Analysis CTA ────────────────────────────── */
+/* ── Analysis CTA：「下一步」導引用輔色 ─────────── */
 .analysis-cta {
-  margin-top: 24px;
+  margin-top: var(--space-6);
   text-align: center;
 }
 
 .analysis-cta-btn {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap-min);
   padding: 14px 28px;
-  background: rgba(159, 212, 212, 0.08);
-  color: #9fd4d4;
-  border: 1px solid rgba(159, 212, 212, 0.2);
-  border-radius: 12px;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: none;
+  border-radius: var(--radius-md);
+  font: inherit;
   font-size: 14px;
-  font-weight: 500;
-  font-family: inherit;
+  font-weight: 600;
   text-decoration: none;
   cursor: pointer;
-  transition:
-    background 0.2s,
-    transform 0.1s;
+  transition: transform 0.1s;
 }
 
 .analysis-cta-btn:hover {
-  background: rgba(159, 212, 212, 0.14);
   transform: translateY(-1px);
 }
+
 .analysis-cta-btn.disabled {
-  opacity: 0.35;
-  pointer-events: none;
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* ── Footer ──────────────────────────────────── */
@@ -786,26 +691,23 @@ onMounted(async () => {
   max-width: 960px;
   margin: 40px auto 0;
   padding: 18px 20px;
-  border-top: 1px solid rgba(241, 237, 224, 0.06);
+  border-top: 1px solid var(--border);
   text-align: center;
   font-size: 12px;
-  /* 0.5 → #7e7e80 on #0a1020 ≈ 4.7:1 (WCAG AA) */
-  color: rgba(241, 237, 224, 0.5);
-  font-family: inherit;
+  color: var(--text-2);
   letter-spacing: 0.4px;
 }
 
 .footer-sep {
   margin: 0 8px;
-  opacity: 0.4;
+  color: var(--text-3);
 }
 
 .footer-brand {
   margin-left: 6px;
-  /* 0.6 → #959593 on #0a1020 ≈ 6.3:1 */
-  color: rgba(241, 237, 224, 0.6);
+  color: var(--text-2);
   text-decoration: underline;
-  text-decoration-color: rgba(241, 237, 224, 0.35);
+  text-decoration-color: var(--border-strong);
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
   border-radius: 2px;
@@ -813,120 +715,26 @@ onMounted(async () => {
     color 0.2s,
     text-decoration-color 0.2s;
 }
-.footer-brand:hover {
-  color: rgba(241, 237, 224, 0.85);
-  text-decoration-color: currentColor;
-}
+
+.footer-brand:hover,
 .footer-brand:focus-visible {
-  color: rgba(241, 237, 224, 0.85);
+  color: var(--text);
   text-decoration-color: currentColor;
-  outline: 2px solid #d4b36a;
+}
+
+.footer-brand:focus-visible {
   outline-offset: 3px;
-}
-
-/* ── 子元件樣式覆蓋（全域，影響 scoped child components）── */
-/* 這些是讓子元件（SleepTrackingPanel 等）在深色背景上正常顯示的最低限度 override。
-   若子元件有自己的深色模式支援，可移除相應規則。 */
-:deep(.sleep-controls),
-:deep(.records-container),
-:deep(.event-form),
-:deep(.manual-sleep-form),
-:deep(.manual-event-form),
-:deep(.baby-selector),
-:deep(.today-summary) {
-  background: #131b33 !important;
-  color: #f1ede0 !important;
-  border-color: rgba(241, 237, 224, 0.08) !important;
-  border-radius: 16px;
-}
-
-:deep(h2),
-:deep(h3) {
-  color: #f1ede0 !important;
-}
-
-:deep(p),
-:deep(label),
-:deep(span) {
-  color: rgba(241, 237, 224, 0.7);
-}
-
-:deep(select),
-:deep(input[type='text']),
-:deep(input[type='time']),
-:deep(input[type='date']),
-:deep(textarea) {
-  background: #1a2340 !important;
-  color: #f1ede0 !important;
-  border: 1px solid rgba(241, 237, 224, 0.1) !important;
-  border-radius: 8px;
-  font-size: 16px !important;
-  min-height: 44px;
-}
-
-:deep(table) {
-  background: transparent !important;
-  color: #f1ede0 !important;
-}
-
-:deep(table th) {
-  background: rgba(241, 237, 224, 0.05) !important;
-  color: rgba(241, 237, 224, 0.6) !important;
-  border-color: rgba(241, 237, 224, 0.08) !important;
-  font-family: inherit;
-  font-size: 11px;
-  letter-spacing: 1px;
-}
-
-:deep(table td) {
-  border-color: rgba(241, 237, 224, 0.06) !important;
-  color: rgba(241, 237, 224, 0.8) !important;
-}
-
-:deep(table tr:hover td) {
-  background: rgba(241, 237, 224, 0.03) !important;
-}
-
-:deep(button:not(.pill-btn):not(.nav-btn)) {
-  background: rgba(159, 212, 212, 0.08) !important;
-  color: #9fd4d4 !important;
-  border: 1px solid rgba(159, 212, 212, 0.15) !important;
-  border-radius: 8px;
-  font-size: 15px !important;
-  min-height: 44px;
-  padding: 10px 18px !important;
-}
-
-:deep(.delete-btn),
-:deep([class*='delete']) {
-  background: rgba(212, 88, 88, 0.08) !important;
-  color: rgba(220, 120, 120, 0.8) !important;
-  border-color: rgba(212, 88, 88, 0.15) !important;
-}
-
-:deep(.sleep-status.sleeping) {
-  background: rgba(159, 212, 212, 0.1) !important;
-  color: #9fd4d4 !important;
-  border-color: rgba(159, 212, 212, 0.2) !important;
-}
-
-:deep(.sleep-status.awake) {
-  background: rgba(212, 179, 106, 0.1) !important;
-  color: #d4b36a !important;
-  border-color: rgba(212, 179, 106, 0.2) !important;
 }
 
 /* ── RWD ─────────────────────────────────────── */
 @media (max-width: 600px) {
-  .top-bar-inner {
-    padding: 10px 14px;
-  }
+  .local-note,
   .main-content,
   .section-card {
-    padding: 0 14px;
+    padding-left: 14px;
+    padding-right: 14px;
   }
   .summary-grid {
-    grid-template-columns: repeat(3, 1fr);
     gap: 6px;
   }
   .sum-card {
@@ -938,16 +746,8 @@ onMounted(async () => {
   .sum-key {
     font-size: 12px;
   }
-  .top-bar-right {
-    gap: 6px;
-  }
-  .nav-btn {
-    padding: 8px 12px;
-    font-size: 13px;
-  }
   .pill-btn {
     padding: 10px 16px;
-    font-size: 14px;
   }
   .case-actions {
     gap: 8px;
@@ -956,7 +756,19 @@ onMounted(async () => {
     width: 100%;
     padding: 16px;
     font-size: 15px;
-    box-sizing: border-box;
+  }
+}
+
+/* ── 列印：紙本只留個案、摘要與記錄表；底色靠 tokens.css 的淺色覆寫 ── */
+@media print {
+  .diary-container {
+    min-height: 0;
+    padding-bottom: 0;
+  }
+
+  .section-card > *,
+  .sum-card {
+    box-shadow: none;
   }
 }
 </style>

@@ -1,0 +1,160 @@
+/* src/assets/styles/tokens.css
+ * 全站設計 token 的唯一來源。結構沿用眠序（sleep-diary-cbti）的 tokens.css，
+ * 配色是睡眠日誌自己的「暖墨＋金」，取自圖示：紙 #FAF7F0、暖墨 #231C15、金 #D4B36A
+ * （2026-11-22 醫師核可，見 docs/design/warm-tokens-plan.md；改色前先讀 kidnsleep-brand skill）。
+ * 主題掛在 <html data-theme="light|dark">，由 index.html 的 inline script 在首屏前決定，
+ * 之後由 src/lib/theme.js 維護（預設跟隨系統）。
+ */
+
+/* ── 淺色（白天） ── */
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+
+  /* 表面 */
+  --bg: #faf7f0;
+  --surface: #ffffff;
+  --surface-2: #f1ece1;
+
+  /* 品牌：圖示金在白底上只有約 2:1，淺色改用壓暗的古銅金才能當文字與按鈕底 */
+  --primary: #7b5d12;
+  --on-primary: #ffffff;
+  --primary-hover: #634a0d;
+  --primary-container: #f5ecd4;
+  --on-primary-container: #523d0a;
+  /* 輔色＝家族共用的青綠，語意固定為「起床／下一步」，不要拿來當一般操作色 */
+  --accent: #0b7a73;
+  --on-accent: #ffffff;
+  --accent-container: #e3f3f1;
+
+  /* 文字 */
+  --text: #231c15;
+  --text-2: #594f44;
+  --text-3: #6b6053;
+
+  /* 邊框 */
+  --border: #e5ded0;
+  --border-strong: #877b6a;
+
+  /* 功能色（文字／圖示用；底色用 *-container）。--danger 只給刪除等破壞性操作 */
+  --success: #256d3f;
+  --success-container: #e6f3ea;
+  --warning: #944f00;
+  --warning-container: #fcf0dc;
+  --danger: #b83227;
+  --danger-container: #fdeceb;
+
+  /* 圖表分類色（固定順序，不循環）；已用 dataviz validate_palette.js --pairs all 在 --surface 上驗過 */
+  --chart-1: #946f14;
+  --chart-2: #256abf;
+  --chart-3: #d55181;
+
+  /* 陰影：淺色只用極輕陰影；深色模式不用陰影 */
+  --shadow-1: 0 1px 2px rgba(35, 28, 21, 0.06);
+  --shadow-2: 0 4px 16px rgba(35, 28, 21, 0.09);
+}
+
+/* ── 深色（睡前／半夜） ── */
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #14100c;
+  --surface: #1f1914;
+  --surface-2: #2a221b;
+
+  --primary: #d4b36a;
+  --on-primary: #231c15;
+  --primary-hover: #e0c482;
+  --primary-container: #382d18;
+  --on-primary-container: #ede0be;
+  --accent: #56c7ba;
+  --on-accent: #10211f;
+  --accent-container: #183330;
+
+  --text: #ede7dc;
+  --text-2: #b3a796;
+  --text-3: #9f9382;
+
+  --border: #362c23;
+  --border-strong: #7a6d5e;
+
+  --success: #6bc68b;
+  --success-container: #1a3122;
+  --warning: #ebb05a;
+  --warning-container: #362612;
+  --danger: #f28b7e;
+  --danger-container: #3b1e1b;
+
+  /* 深色的第一色比 --primary 暗一階，圖示金在深色底上超出圖表亮度範圍 */
+  --chart-1: #b08e40;
+  --chart-2: #3987e5;
+  --chart-3: #d55181;
+
+  --shadow-1: none;
+  --shadow-2: none;
+}
+
+/* ── 不隨主題變的 token ── */
+:root {
+  /* 只用裝置內建字體，不載入任何 webfont（開啟較快、不連外部服務） */
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Noto Sans TC', 'Microsoft JhengHei',
+    system-ui, sans-serif;
+
+  /* 圓角 */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+
+  /* 間距（4 為基數） */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* 觸控目標最小尺寸 */
+  --tap-min: 44px;
+}
+
+/* ── 列印：永遠是淺色紙本，不管畫面目前是哪個主題 ──
+ * 同時寫 :root 與 [data-theme='dark']，否則深色主題的選擇器會蓋掉這裡。
+ * 紙本底色用純白（不印米黃底，省墨）；其餘沿用淺色 token。
+ * Chart.js 的 canvas 不吃 CSS 變數，列印前由各頁用 readChartTheme({ forceLight: true }) 重畫。 */
+@media print {
+  :root,
+  [data-theme='light'],
+  [data-theme='dark'] {
+    color-scheme: light;
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #f1ece1;
+    --primary: #7b5d12;
+    --on-primary: #ffffff;
+    --primary-hover: #634a0d;
+    --primary-container: #f5ecd4;
+    --on-primary-container: #523d0a;
+    --accent: #0b7a73;
+    --on-accent: #ffffff;
+    --accent-container: #e3f3f1;
+    --text: #231c15;
+    --text-2: #594f44;
+    --text-3: #6b6053;
+    --border: #e5ded0;
+    --border-strong: #877b6a;
+    --success: #256d3f;
+    --success-container: #e6f3ea;
+    --warning: #944f00;
+    --warning-container: #fcf0dc;
+    --danger: #b83227;
+    --danger-container: #fdeceb;
+    --chart-1: #946f14;
+    --chart-2: #256abf;
+    --chart-3: #d55181;
+    --shadow-1: none;
+    --shadow-2: none;
+  }
+}

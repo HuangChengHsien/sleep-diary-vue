@@ -3,11 +3,18 @@
 // Y 軸用 16–30 的「延伸小時」表示，讓跨午夜的時間可以連續呈現。
 
 import { Chart } from './chart-setup.js'
-import { chartManager } from './chart-manager.js'
+import {
+  chartManager,
+  resolveRenderOptions,
+  animationOption,
+  CHART_FONT_FAMILY,
+} from './chart-manager.js'
+import { withAlpha } from '@/lib/chart-theme.js'
 import { drawNoDataMessage } from './no-data.js'
 import { normalizeTimestamp, getLocalDateString } from '@/lib/chart-calc.js'
 
-export const renderBedtimeChart = (sleepData) => {
+export const renderBedtimeChart = (sleepData, options) => {
+  const { theme, animate } = resolveRenderOptions(options)
   const canvas = document.getElementById('bedtimeCanvas')
   if (!canvas) return
   const ctx = canvas.getContext('2d')
@@ -41,7 +48,7 @@ export const renderBedtimeChart = (sleepData) => {
     .slice(-50) // 增加數據量
 
   if (bedtimeRecords.length === 0) {
-    drawNoDataMessage(ctx, canvas, '沒有夜晚就寢時間記錄')
+    drawNoDataMessage(ctx, canvas, '沒有夜晚就寢時間記錄', theme)
     return
   }
 
@@ -58,13 +65,13 @@ export const renderBedtimeChart = (sleepData) => {
         {
           label: '就寢時間',
           data: bedtimeRecords.map((r) => r.bedTimeMinutes / 60),
-          borderColor: '#FF5722',
-          backgroundColor: 'rgba(255, 87, 34, 0.1)',
+          borderColor: theme.series[0],
+          backgroundColor: withAlpha(theme.series[0], 0.1),
           tension: 0.2, // 直線連接
           pointRadius: 6,
           pointHoverRadius: 8,
-          pointBackgroundColor: '#FF5722',
-          pointBorderColor: '#ffffff',
+          pointBackgroundColor: theme.series[0],
+          pointBorderColor: theme.surface,
           pointBorderWidth: 2,
           fill: false,
         },
@@ -73,6 +80,7 @@ export const renderBedtimeChart = (sleepData) => {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      ...animationOption(animate),
       scales: {
         x: {
           title: { display: true, text: '記錄時間序列' },
@@ -100,7 +108,7 @@ export const renderBedtimeChart = (sleepData) => {
       plugins: {
         title: {
           display: true,
-          text: '🛏️ 就寢時間趨勢 (完整記錄)',
+          text: '就寢時間趨勢 (完整記錄)',
         },
         legend: { display: false },
         tooltip: {
@@ -139,19 +147,19 @@ export const renderBedtimeChart = (sleepData) => {
               ctx.save()
 
               // 文字樣式
-              ctx.font = 'bold 10px Arial'
+              ctx.font = `bold 10px ${CHART_FONT_FAMILY}`
               ctx.textAlign = 'center'
               ctx.textBaseline = 'bottom'
 
               const position = element.tooltipPosition()
 
-              // 深色背景
+              // 標籤底色＝卡片底色，蓋住後面的格線
               const textWidth = ctx.measureText(timeText).width
-              ctx.fillStyle = 'rgba(10, 16, 32, 0.85)'
+              ctx.fillStyle = theme.surface
               ctx.fillRect(position.x - textWidth / 2 - 2, position.y - 16, textWidth + 4, 12)
 
               // 文字
-              ctx.fillStyle = '#FF8A65'
+              ctx.fillStyle = theme.ink
               ctx.fillText(timeText, position.x, position.y - 6)
 
               ctx.restore()

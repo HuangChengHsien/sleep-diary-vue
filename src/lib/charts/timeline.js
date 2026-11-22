@@ -7,12 +7,19 @@
 // 讓「圖上有、數字裡沒有」這件事在圖上就看得出來。
 
 import { Chart } from './chart-setup.js'
-import { chartManager } from './chart-manager.js'
+import {
+  chartManager,
+  resolveRenderOptions,
+  animationOption,
+  CHART_FONT_FAMILY,
+} from './chart-manager.js'
+import { withAlpha } from '@/lib/chart-theme.js'
 import { drawNoDataMessage } from './no-data.js'
 import { normalizeTimestamp, getLocalDateString } from '@/lib/chart-calc.js'
 import { isExcludedFromAnalysis } from '@/lib/record-exclusion.js'
 
-export const renderTimelineChart = (sleepData, eventData, showEvents, showSleep) => {
+export const renderTimelineChart = (sleepData, eventData, showEvents, showSleep, options) => {
+  const { theme, animate } = resolveRenderOptions(options)
   const canvas = document.getElementById('timelineCanvas')
   if (!canvas) return
   const ctx = canvas.getContext('2d')
@@ -113,7 +120,7 @@ export const renderTimelineChart = (sleepData, eventData, showEvents, showSleep)
   }
 
   if (allDates.length === 0) {
-    drawNoDataMessage(ctx, canvas, '此區間沒有任何記錄可顯示')
+    drawNoDataMessage(ctx, canvas, '此區間沒有任何記錄可顯示', theme)
     return
   }
 
@@ -141,7 +148,11 @@ export const renderTimelineChart = (sleepData, eventData, showEvents, showSleep)
     })
   }
 
-  const textColor = 'rgba(241, 237, 224, 0.65)'
+  // 睡眠段＝第一色；入睡準備＝中性 --border-strong；事件標記＝第三色
+  const textColor = theme.ink
+  const sleepColor = theme.series[0]
+  const latencyColor = withAlpha(theme.borderStrong, 0.55)
+  const eventColor = theme.series[2]
 
   const newChart = new Chart(ctx, {
     type: 'bar',
@@ -152,16 +163,17 @@ export const renderTimelineChart = (sleepData, eventData, showEvents, showSleep)
           data: processedSleepData,
           backgroundColor: function (ctx) {
             const d = ctx.raw
-            if (!d) return 'rgba(128, 128, 128, 0.5)'
+            if (!d) return latencyColor
             // 已排除：同色系但大幅降低不透明度，看得到形狀、不會搶走注意力
             if (d.excluded) {
-              return d.type === 'sleep' ? 'rgba(76, 175, 80, 0.22)' : 'rgba(128, 128, 128, 0.15)'
+              return d.type === 'sleep'
+                ? withAlpha(sleepColor, 0.22)
+                : withAlpha(theme.borderStrong, 0.15)
             }
-            return d.type === 'sleep' ? '#4CAF50' : 'rgba(128, 128, 128, 0.5)'
+            return d.type === 'sleep' ? sleepColor : latencyColor
           },
-          // 已排除的區段加一圈虛邊，單靠淡化在深色背景上不夠明確
-          borderColor: (ctx) =>
-            ctx.raw?.excluded ? 'rgba(241, 237, 224, 0.4)' : 'rgba(0, 0, 0, 0)',
+          // 已排除的區段加一圈外框，單靠淡化不夠明確
+          borderColor: (ctx) => (ctx.raw?.excluded ? theme.borderStrong : 'transparent'),
           borderWidth: (ctx) => (ctx.raw?.excluded ? 1 : 0),
           barPercentage: 0.5,
           borderSkipped: false,
@@ -172,6 +184,7 @@ export const renderTimelineChart = (sleepData, eventData, showEvents, showSleep)
       indexAxis: 'y',
       responsive: true,
       maintainAspectRatio: false,
+      ...animationOption(animate),
       scales: {
         x: {
           min: 0,
@@ -183,7 +196,7 @@ export const renderTimelineChart = (sleepData, eventData, showEvents, showSleep)
             color: textColor,
           },
           grid: {
-            color: 'rgba(128, 128, 128, 0.2)',
+            color: theme.grid,
           },
         },
         y: {
@@ -200,9 +213,9 @@ export const renderTimelineChart = (sleepData, eventData, showEvents, showSleep)
         legend: { display: false },
         title: {
           display: true,
-          text: '💤 睡眠時間軸圖表',
+          text: '睡眠時間軸圖表',
           font: { size: 16 },
-          color: textColor,
+          color: theme.text,
         },
         tooltip: {
           callbacks: {
@@ -241,7 +254,7 @@ export const renderTimelineChart = (sleepData, eventData, showEvents, showSleep)
             ctx.save()
 
             // 繪製垂直線
-            ctx.strokeStyle = '#E91E63'
+            ctx.strokeStyle = eventColor
             ctx.lineWidth = 3
             ctx.setLineDash([8, 4])
             ctx.beginPath()
@@ -251,19 +264,19 @@ export const renderTimelineChart = (sleepData, eventData, showEvents, showSleep)
             ctx.setLineDash([])
 
             // 繪製事件標記點（更大更明顯）
-            ctx.fillStyle = '#E91E63'
+            ctx.fillStyle = eventColor
             ctx.beginPath()
             ctx.arc(xPos, yPos, 6, 0, 2 * Math.PI)
             ctx.fill()
 
-            // 繪製白色邊框讓圓點更明顯
-            ctx.strokeStyle = '#ffffff'
+            // 繪製底色邊框讓圓點更明顯
+            ctx.strokeStyle = theme.surface
             ctx.lineWidth = 2
             ctx.stroke()
 
             // 繪製事件描述背景框
             const text = marker.description
-            ctx.font = 'bold 11px Arial'
+            ctx.font = `bold 11px ${CHART_FONT_FAMILY}`
             const textMetrics = ctx.measureText(text)
             const textWidth = textMetrics.width
             const textHeight = 16
@@ -281,8 +294,8 @@ export const renderTimelineChart = (sleepData, eventData, showEvents, showSleep)
               textX = chartArea.left + textWidth / 2 + 8
             }
 
-            // 繪製文字背景
-            ctx.fillStyle = 'rgba(233, 30, 99, 0.9)'
+            // 繪製文字背景（卡片底色＋事件色外框，文字用主文字色才夠對比）
+            ctx.fillStyle = theme.surface
             ctx.fillRect(
               textX - textWidth / 2 - 6,
               textY - textHeight / 2 - 4,
@@ -291,7 +304,7 @@ export const renderTimelineChart = (sleepData, eventData, showEvents, showSleep)
             )
 
             // 繪製文字邊框
-            ctx.strokeStyle = '#E91E63'
+            ctx.strokeStyle = eventColor
             ctx.lineWidth = 1
             ctx.strokeRect(
               textX - textWidth / 2 - 6,
@@ -301,13 +314,13 @@ export const renderTimelineChart = (sleepData, eventData, showEvents, showSleep)
             )
 
             // 繪製文字
-            ctx.fillStyle = '#ffffff'
+            ctx.fillStyle = theme.text
             ctx.textAlign = 'center'
             ctx.textBaseline = 'middle'
             ctx.fillText(text, textX, textY)
 
             // 繪製連接線（從圓點到文字框）
-            ctx.strokeStyle = '#E91E63'
+            ctx.strokeStyle = eventColor
             ctx.lineWidth = 1
             ctx.setLineDash([2, 2])
             ctx.beginPath()

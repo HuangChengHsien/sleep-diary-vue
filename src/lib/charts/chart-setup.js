@@ -25,7 +25,8 @@ import {
 import 'chartjs-adapter-date-fns'
 import annotationPlugin from 'chartjs-plugin-annotation'
 
-import { DARK_THEME, applyChartTheme } from '@/lib/chart-theme.js'
+import { applyChartTheme } from '@/lib/chart-theme.js'
+import { onThemeChange } from '@/lib/theme.js'
 
 Chart.register(
   LineController,
@@ -43,7 +44,12 @@ Chart.register(
   annotationPlugin,
 )
 
-// 全域套用深色主題（預設）
-applyChartTheme(DARK_THEME)
+// 依目前主題（淺色／深色）設定 Chart.js 預設色；主題切換時重設。
+// 已經畫好的圖要由各頁自己重畫才會換色（見 AnalysisView 的 onThemeChange）。
+// 圖表字體跟介面一致，只用裝置內建字體
+Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'PingFang TC', 'Noto Sans TC', system-ui, sans-serif"
+
+applyChartTheme()
+onThemeChange(() => applyChartTheme())
 
 export { Chart }

@@ -36,7 +36,7 @@ export function useBabyManagement() {
       name: baby.name,
       birthDate: baby.birthDate,
       age: calculateAge(baby.birthDate),
-      displayName: `👶 ${baby.name} (${calculateAge(baby.birthDate)})`,
+      displayName: `${baby.name} (${calculateAge(baby.birthDate)})`,
     }))
   })
 

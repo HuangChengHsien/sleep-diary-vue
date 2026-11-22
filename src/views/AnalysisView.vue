@@ -1,55 +1,76 @@
 <template>
   <div class="analysis-container">
+    <!-- 頁首在載入中與錯誤狀態也顯示，隨時可以切回記錄頁；列印時整個隱藏，改用下方的 print-header -->
+    <AppPageHeader title="趨勢" class="no-print">
+      <template #actions>
+        <button
+          type="button"
+          class="header-action"
+          :disabled="isLoading || !!errorMessage || !selectedBabyId"
+          @click="printReport"
+        >
+          <AppIcon name="printer" />
+          列印報告
+        </button>
+        <AppMenu label="外觀" :items="themeMenuItems" @select="handleThemeSelect" />
+      </template>
+      <DiarySwitcher :baby-id="selectedBabyId" />
+    </AppPageHeader>
+
     <div v-if="isLoading" class="loading-container">
       <div class="loading-spinner"></div>
       <h3>正在載入數據分析...</h3>
-      <p>請稍候，正在驗證登入狀態並載入寶寶資料</p>
+      <p>請稍候，正在載入個案資料</p>
     </div>
 
     <div v-else-if="errorMessage" class="error-container">
-      <div class="error-icon">😴</div>
+      <AppIcon name="info" class="error-icon" />
       <h3>無法載入數據</h3>
       <p>{{ errorMessage }}</p>
-      <button @click="reloadData">重新載入</button>
+      <button type="button" @click="reloadData">重新載入</button>
     </div>
 
     <div v-else class="main-content">
-      <div class="nav-header">
-        <div class="nav-controls">
-          <div class="nav-left">
-            <div class="baby-info">
-              <span>📊</span>
-              <span>{{ currentBabyDisplay }}</span>
-            </div>
-
-            <div class="baby-selector">
-              <select v-model="selectedBabyId" @change="handleBabyChange" :disabled="isLoading">
-                <option value="">請選擇個案...</option>
-                <option v-for="baby in babyList" :key="baby.id" :value="baby.id">
-                  {{ baby.displayName }}
-                </option>
-              </select>
-            </div>
-          </div>
-
-          <div class="nav-right">
-            <router-link to="/diary" class="back-btn">← 返回日誌</router-link>
-            <button @click="printReport" class="back-btn">🖨️ 列印報告</button>
-            <button @click="logout" class="back-btn">登出</button>
-          </div>
-        </div>
+      <div class="subject-bar no-print">
+        <label for="analysis-subject" class="subject-label">個案</label>
+        <select
+          id="analysis-subject"
+          v-model="selectedBabyId"
+          @change="handleBabyChange"
+          :disabled="isLoading"
+        >
+          <option value="">請選擇個案...</option>
+          <option v-for="baby in babyList" :key="baby.id" :value="baby.id">
+            {{ baby.displayName }}
+          </option>
+        </select>
       </div>
 
-      <!-- 列印專用。螢幕上這些資訊在 nav-header，但 nav-header 在列印時被隱藏，
-           結果印出來的報告沒有個案姓名，也看不出是哪個版本算的。 -->
+      <!-- 列印專用。螢幕上的頁首與個案選單在列印時隱藏，
+           少了這塊，印出來的報告沒有個案姓名，也看不出是哪個版本算的。 -->
       <div class="print-header">
-        <h1>睡眠日記 · 數據分析報告</h1>
+        <h1>睡眠日誌 · 數據分析報告</h1>
         <dl>
-          <div><dt>個案</dt><dd>{{ printBabyLabel }}</dd></div>
-          <div><dt>統計期間</dt><dd>{{ filteredStatistics.dateRange }}</dd></div>
-          <div><dt>顯示範圍</dt><dd>{{ getFilterDisplayText() }}</dd></div>
-          <div><dt>列印日期</dt><dd>{{ printedOn }}</dd></div>
-          <div><dt>程式版本</dt><dd>{{ buildDate }}</dd></div>
+          <div>
+            <dt>個案</dt>
+            <dd>{{ printBabyLabel }}</dd>
+          </div>
+          <div>
+            <dt>統計期間</dt>
+            <dd>{{ filteredStatistics.dateRange }}</dd>
+          </div>
+          <div>
+            <dt>顯示範圍</dt>
+            <dd>{{ getFilterDisplayText() }}</dd>
+          </div>
+          <div>
+            <dt>列印日期</dt>
+            <dd>{{ printedOn }}</dd>
+          </div>
+          <div>
+            <dt>程式版本</dt>
+            <dd>{{ buildDate }}</dd>
+          </div>
         </dl>
         <p class="print-header-note">
           統計方式可能隨版本調整。若需比對不同時間列印的報告，請以「程式版本」為準。
@@ -63,19 +84,22 @@
           <div class="stat-subtitle">期間: {{ filteredStatistics.dateRange }}</div>
         </div>
 
-        <div class="stat-card" :class="getRatingClass('dailySleep')">
+        <div class="stat-card print-exact" :class="getRatingClass('dailySleep')">
           <div class="stat-value">{{ filteredStatistics.avgDailySleep }}</div>
           <div class="stat-label">每日平均總睡眠</div>
           <div class="stat-subtitle">小時 (含小睡)</div>
         </div>
 
-        <div class="stat-card" :class="getRatingClass('latency')">
+        <div class="stat-card print-exact" :class="getRatingClass('latency')">
           <div class="stat-value">{{ filteredStatistics.avgSleepLatency }}</div>
           <div class="stat-label">平均要多久才會入睡</div>
           <div class="stat-subtitle">分鐘 (僅限夜晚首次就寢)</div>
-          <div v-if="filteredStatistics.extremeLatencyNights > 0" class="stat-caveat">
-            ⚠️ 含 {{ filteredStatistics.extremeLatencyNights }} 晚超過 {{ extremeLatencyHours }} 小時，
-            平均值已被拉高，不代表典型狀況
+          <div v-if="filteredStatistics.extremeLatencyNights > 0" class="stat-caveat print-exact">
+            <AppIcon name="info" class="notice-icon" />
+            <span
+              >含 {{ filteredStatistics.extremeLatencyNights }} 晚超過
+              {{ extremeLatencyHours }} 小時， 平均值已被拉高，不代表典型狀況</span
+            >
           </div>
         </div>
 
@@ -85,63 +109,73 @@
           <div class="stat-subtitle">基於每次夜晚首次就寢時間計算</div>
         </div>
 
-        <div class="stat-card" :class="getRatingClass('onset')">
+        <div class="stat-card print-exact" :class="getRatingClass('onset')">
           <div class="stat-value">{{ filteredStatistics.avgSleepOnset }}</div>
           <div class="stat-label">夜晚平均入睡時間</div>
           <div class="stat-subtitle">基於每次夜晚首次入睡時間計算</div>
         </div>
 
-        <div class="stat-card" :class="getRatingClass('wakeup')">
+        <div class="stat-card print-exact" :class="getRatingClass('wakeup')">
           <div class="stat-value">{{ filteredStatistics.avgWakeUpTime }}</div>
           <div class="stat-label">夜晚平均起床時間</div>
           <div class="stat-subtitle">基於每次夜晚最終醒來時間計算</div>
         </div>
       </div>
 
-      <div v-if="excludedInRangeCount > 0" class="stats-notice">
-        🚫 這個範圍內有 {{ excludedInRangeCount }} 筆記錄被標記為「不列入分析」<template
-          v-if="excludedPeriodLabels"
-        >（{{ excludedPeriodLabels }}）</template>。
-        上方統計與趨勢圖表都不含這些記錄；時間軸圖表仍會以淡色畫出，方便對照前後文。
-        可到日誌頁面調整。
+      <!-- 已排除期間是中性標記（使用者自己的選擇），不是警告（規劃 §8.7） -->
+      <div v-if="excludedInRangeCount > 0" class="stats-notice excluded print-exact">
+        <AppIcon name="info" class="notice-icon" />
+        <p>
+          這個範圍內有 {{ excludedInRangeCount }} 筆記錄被標記為「不列入分析」<template
+            v-if="excludedPeriodLabels"
+            >（{{ excludedPeriodLabels }}）</template
+          >。 上方統計與趨勢圖表都不含這些記錄；時間軸圖表仍會以淡色畫出，方便對照前後文。
+          可到日誌頁面調整。
+        </p>
       </div>
 
-      <div v-if="filteredStatistics.recordsExcludedFromNightStats > 0" class="stats-notice">
-        ⚠️ 有 {{ filteredStatistics.recordsExcludedFromNightStats }} 筆記錄的上床時間落在白天
-        (09:00–18:00) 但入睡時間在夜晚，因此未計入上方四項夜晚統計。
-        常見原因是輸入上床時間時上下午選錯，可到日誌頁面確認該筆記錄。
+      <div
+        v-if="filteredStatistics.recordsExcludedFromNightStats > 0"
+        class="stats-notice warning print-exact"
+      >
+        <AppIcon name="info" class="notice-icon" />
+        <p>
+          有 {{ filteredStatistics.recordsExcludedFromNightStats }} 筆記錄的上床時間落在白天
+          (09:00–18:00) 但入睡時間在夜晚，因此未計入上方四項夜晚統計。
+          常見原因是輸入上床時間時上下午選錯，可到日誌頁面確認該筆記錄。
+        </p>
       </div>
 
       <div class="legend-container">
-        <h3>📊 指標邊框顏色說明</h3>
+        <h3>指標邊框顏色說明</h3>
         <p class="legend-intro">卡片左側邊框顏色代表該數據與同齡兒童青少年參考值的比較結果：</p>
         <div class="legend-list">
           <div class="legend-entry">
-            <span class="color-box good"></span>
+            <span class="color-box good print-exact"></span>
             <b>理想 / 良好:</b> 數據落在最建議的範圍內。
           </div>
           <div class="legend-entry">
-            <span class="color-box acceptable"></span>
+            <span class="color-box acceptable print-exact"></span>
             <b>可接受:</b> 數據仍在健康範圍內，但可持續觀察。
           </div>
           <div class="legend-entry">
-            <span class="color-box improvement"></span>
+            <span class="color-box improvement print-exact"></span>
             <b>需注意 / 改善:</b> 數據已偏離建議範圍，建議多加留意。
           </div>
           <div class="legend-entry">
-            <span class="color-box default"></span>
+            <span class="color-box default print-exact"></span>
             <b>無評級:</b> 該指標暫無適用於此年齡段的參考資料。
           </div>
         </div>
         <div class="legend-source-footer">
-          <b>參考來源:</b> 每日總睡眠、入睡耗時 (National Sleep Fundation)・・入睡/起床時間 (Galland
+          <b>參考來源:</b> 每日總睡眠、入睡耗時 (National Sleep Foundation)・入睡/起床時間 (Galland
           et al.)
         </div>
       </div>
 
       <div class="daily-list-container">
         <div class="daily-list-header">
-          <h3>📅 每日睡眠時長明細 (白天/夜晚)</h3>
+          <h3>每日睡眠時長明細 (白天/夜晚)</h3>
           <div class="daily-filter-info">
             <span class="filter-badge">{{ getFilterDisplayText() }}</span>
           </div>
@@ -166,20 +200,20 @@
               <tr v-for="data in filteredDailySleepData" :key="data.date">
                 <td>{{ data.date }}</td>
                 <td>{{ data.totalSleep.toFixed(1) }}h</td>
-                <td class="night-sleep">{{ data.nightSleep.toFixed(1) }}h</td>
-                <td class="day-sleep">{{ data.daySleep.toFixed(1) }}h</td>
+                <td>{{ data.nightSleep.toFixed(1) }}h</td>
+                <td>{{ data.daySleep.toFixed(1) }}h</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      <div class="control-panel">
-        <h3>📈 圖表設定</h3>
+      <div class="control-panel no-print">
+        <h3>圖表設定</h3>
 
         <div class="filter-section">
           <div class="filter-header">
-            <h4>📅 顯示範圍篩選</h4>
+            <h4>顯示範圍篩選</h4>
             <div class="filter-status">
               <span class="status-text">{{ getFilterStatusText() }}</span>
             </div>
@@ -190,14 +224,19 @@
               <button
                 v-for="option in quickFilterOptions"
                 :key="option.value"
+                type="button"
                 @click="setQuickFilter(option.value)"
                 :class="['quick-btn', { active: chartFilter.dayRange === option.value }]"
+                :aria-pressed="chartFilter.dayRange === option.value ? 'true' : 'false'"
               >
                 {{ option.label }}
               </button>
             </div>
 
-            <button @click="resetFilter" class="reset-btn" title="重置為預設值">🔄 重置</button>
+            <button type="button" @click="resetFilter" class="outline-btn" title="重置為預設值">
+              <AppIcon name="refresh-cw" />
+              重置
+            </button>
           </div>
         </div>
 
@@ -236,12 +275,24 @@
       <div class="chart-container">
         <div class="chart-header">
           <h3 class="chart-title">{{ chartTitle }}</h3>
-          <div class="chart-actions">
-            <button @click="downloadChart" class="download-btn" :disabled="!hasChartData">
-              💾 下載圖片
+          <div class="chart-actions no-print">
+            <button
+              type="button"
+              @click="downloadChart"
+              class="outline-btn"
+              :disabled="!hasChartData"
+            >
+              <AppIcon name="download" />
+              下載圖片
             </button>
-            <button @click="refreshChart" class="refresh-btn" :disabled="!hasChartData">
-              🔄 重繪
+            <button
+              type="button"
+              @click="refreshChart"
+              class="outline-btn"
+              :disabled="!hasChartData"
+            >
+              <AppIcon name="refresh-cw" />
+              重繪
             </button>
           </div>
         </div>
@@ -324,7 +375,7 @@
         </p>
 
         <div v-show="!hasChartData" class="chart-empty">
-          <div class="chart-empty-icon">📭</div>
+          <AppIcon name="chart-line" class="chart-empty-icon" />
           <p>{{ chartEmptyMessage }}</p>
         </div>
       </div>
@@ -333,16 +384,22 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, onBeforeUnmount, onUnmounted, nextTick, watch } from 'vue'
 import { useBabyManagement } from '@/composables/useBabyManagement'
 import { useChartAnalysis } from '@/composables/useChartAnalysis'
+import { useThemeMenu } from '@/composables/useThemeMenu'
+import AppPageHeader from '@/components/ui/AppPageHeader.vue'
+import AppMenu from '@/components/ui/AppMenu.vue'
+import AppIcon from '@/components/ui/AppIcon.js'
+import DiarySwitcher from '@/components/ui/DiarySwitcher.vue'
 import {
   calculateSleepStatistics,
   processDailySleepData,
   calculateAgeInMonths,
 } from '@/lib/chart-calc'
-import { DARK_THEME } from '@/lib/chart-theme'
+import { readChartTheme, applyChartTheme } from '@/lib/chart-theme'
+import { onThemeChange, onMediaQueryChange } from '@/lib/theme'
+import { withRenderOptions } from '@/lib/charts/chart-manager.js'
 import { MAX_PLAUSIBLE_LATENCY_MINUTES } from '@/lib/sleep-record-input'
 import {
   analysableRecords,
@@ -357,7 +414,6 @@ import {
   getSleepOffsetRating,
 } from '@/lib/sleep-references.js'
 
-const router = useRouter()
 const {
   babies,
   currentBabyId,
@@ -370,6 +426,7 @@ const {
 } = useBabyManagement()
 
 const { renderChart, renderDailyDurationChart, destroyChart } = useChartAnalysis()
+const { themeMenuItems, handleThemeSelect } = useThemeMenu()
 
 // 響應式數據
 const isLoading = ref(true)
@@ -542,21 +599,15 @@ const chartEmptyMessage = computed(() => {
   return `最近 ${chartFilter.value.dayRange} 天沒有睡眠記錄，可以放寬上方的顯示範圍`
 })
 
-// 原有的計算屬性
-const currentBabyDisplay = computed(() => {
-  if (!currentBaby.value) return '睡眠數據分析'
-  return `睡眠數據分析 - ${currentBaby.value.name}`
-})
-
 const chartTitle = computed(() => {
   const titles = {
-    timeline: '💤 睡眠時間軸圖表',
-    duration: '📊 睡眠時間長度趨勢',
-    dailyDuration: '📈 每日睡眠分析 (白天/夜晚/總計)',
-    bedtime: '🌙 就寢時間趨勢',
-    latency: '⏱️ 入睡耗時趨勢',
-    wakeCount: '🌙 清醒次數趨勢',
-    weekly: '📅 週統計分析',
+    timeline: '睡眠時間軸圖表',
+    duration: '睡眠時間長度趨勢',
+    dailyDuration: '每日睡眠分析 (白天/夜晚/總計)',
+    bedtime: '就寢時間趨勢',
+    latency: '入睡耗時趨勢',
+    wakeCount: '清醒次數趨勢',
+    weekly: '週統計分析',
   }
   const baseTitle = titles[chartType.value] || '睡眠分析圖表'
 
@@ -686,13 +737,13 @@ const formattedEventData = computed(() => {
 
 const getEventTypeName = (eventType) => {
   const eventNames = {
-    feed: '🍼 餵奶',
-    diaper: '👶 換尿布',
-    play: '🎮 玩耍',
-    cry: '😢 哭泣',
-    medicine: '💊 餵藥',
-    bath: '🛁 洗澡',
-    other: '📝 其他',
+    feed: '餵奶',
+    diaper: '換尿布',
+    play: '玩耍',
+    cry: '哭泣',
+    medicine: '餵藥',
+    bath: '洗澡',
+    other: '其他',
   }
   return eventNames[eventType] || eventType || '其他事件'
 }
@@ -721,31 +772,90 @@ const updateChart = async () => {
   await nextTick()
 
   try {
-    // 特別處理 dailyDuration 圖表
-    if (chartType.value === 'dailyDuration') {
-      // 直接調用你修改後的 renderDailyDurationChart 函數
-      renderDailyDurationChart(
-        filteredDailySleepData.value, // 🎯 關鍵：使用每日匯總數據
-        currentBaby.value,
-        chartFilter.value.dayRange, // 🎯 關鍵：傳入篩選範圍
-      )
-    } else {
-      // 其他圖表使用原有邏輯
-      renderChart(
-        null,
-        chartType.value,
-        // 時間軸刻意吃完整資料（含已排除），其餘圖表沿用排除後的集合
-        chartType.value === 'timeline' ? timelineSleepRecords.value : filteredSleepRecords.value,
-        formattedEventData.value,
-        showEvents.value,
-        showSleep.value,
-        currentBaby.value,
-        chartFilter.value,
-      )
-    }
+    renderCurrentChart()
   } catch (error) {
     console.error('圖表渲染失敗:', error)
   }
+}
+
+// 同步畫出目前選的那張圖（一次只顯示一張）。主題切換與列印都靠它重畫。
+const renderCurrentChart = () => {
+  // 特別處理 dailyDuration 圖表
+  if (chartType.value === 'dailyDuration') {
+    renderDailyDurationChart(
+      filteredDailySleepData.value, // 使用每日匯總數據
+      currentBaby.value,
+      chartFilter.value.dayRange, // 傳入篩選範圍
+    )
+  } else {
+    renderChart(
+      null,
+      chartType.value,
+      // 時間軸刻意吃完整資料（含已排除），其餘圖表沿用排除後的集合
+      chartType.value === 'timeline' ? timelineSleepRecords.value : filteredSleepRecords.value,
+      formattedEventData.value,
+      showEvents.value,
+      showSleep.value,
+      currentBaby.value,
+      chartFilter.value,
+    )
+  }
+}
+
+// 用指定的繪圖設定（{ theme, animate }）同步重畫目前的圖。
+// renderChart 經過 useChartAnalysis，無法直接傳參數，所以用 withRenderOptions 包住。
+const rerenderChart = (options) => {
+  if (!hasChartData.value) return
+  try {
+    withRenderOptions(options, renderCurrentChart)
+  } catch (error) {
+    console.error('圖表重繪失敗:', error)
+  }
+}
+
+// ── 圖表主題：跟著畫面主題換色；列印與下載一律用淺色 ──
+// canvas 不吃 CSS 變數，主題一變就要重畫。chart-setup 已在同一個事件裡重設 Chart.defaults，
+// 這裡再呼叫一次 applyChartTheme() 確保順序無關。
+let printingInLight = false
+
+const handleThemeChange = () => {
+  if (printingInLight) return // 列印中維持淺色，afterprint 時再依當下主題恢復
+  applyChartTheme()
+  rerenderChart({ animate: false })
+}
+
+// 列印前：用淺色圖表主題、不跑動畫同步重畫（window.print() 前必須已經畫完）
+const renderChartForPrint = () => {
+  stampPrintDate()
+  if (printingInLight) return
+  printingInLight = true
+  try {
+    const light = readChartTheme({ forceLight: true })
+    applyChartTheme(light)
+    rerenderChart({ theme: light, animate: false })
+  } catch (error) {
+    // 換色失敗就維持目前主題列印，不要讓 printingInLight 卡住
+    console.error('列印前重畫圖表失敗:', error)
+    printingInLight = false
+    applyChartTheme()
+  }
+}
+
+// 列印後：恢復目前的畫面主題
+const restoreChartAfterPrint = () => {
+  if (!printingInLight) return
+  printingInLight = false
+  applyChartTheme()
+  rerenderChart({ animate: false })
+}
+
+// afterprint 的備援：部分瀏覽器（舊版 Safari）只發 matchMedia('print') 的變化
+const printMedia =
+  typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('print') : null
+let removePrintMediaListener = () => {}
+const handlePrintMediaChange = (e) => {
+  if (e.matches) renderChartForPrint()
+  else restoreChartAfterPrint()
 }
 
 // Watch 監聽器
@@ -773,21 +883,32 @@ const downloadChart = () => {
 
   try {
     const babyName = currentBaby.value?.name || '個案'
-    const chartTypeName = ['💤', '📊', '📈', '🌙', '⏱️', '📅']
-      .reduce((s, emoji) => s.replaceAll(emoji, ''), chartTitle.value)
-      .trim()
+    const chartTypeName = chartTitle.value.trim()
     const currentDate = new Date().toISOString().split('T')[0]
     const filterSuffix =
       chartFilter.value.dayRange === 'all' ? '全部' : `${chartFilter.value.dayRange}天`
 
-    // 用 off-screen canvas 合成深色背景，確保 PNG 顏色正確
+    // 下載的 PNG 一律是淺色（同列印），方便傳給醫師或印出：
+    // 先用淺色主題同步重畫，再用 off-screen canvas 合成白底，最後恢復目前主題。
+    // 全程同步，畫面不會閃一下淺色。
+    const light = readChartTheme({ forceLight: true })
     const offscreen = document.createElement('canvas')
-    offscreen.width = canvas.width
-    offscreen.height = canvas.height
-    const ctx = offscreen.getContext('2d')
-    ctx.fillStyle = DARK_THEME.canvasBg
-    ctx.fillRect(0, 0, offscreen.width, offscreen.height)
-    ctx.drawImage(canvas, 0, 0)
+    try {
+      applyChartTheme(light)
+      // 直接呼叫（不經 rerenderChart），重畫失敗時才會進外層 catch、不會下載到壞圖
+      withRenderOptions({ theme: light, animate: false }, renderCurrentChart)
+      offscreen.width = canvas.width
+      offscreen.height = canvas.height
+      const ctx = offscreen.getContext('2d')
+      ctx.fillStyle = light.surface
+      ctx.fillRect(0, 0, offscreen.width, offscreen.height)
+      ctx.drawImage(canvas, 0, 0)
+    } finally {
+      if (!printingInLight) {
+        applyChartTheme()
+        rerenderChart({ animate: false })
+      }
+    }
 
     const link = document.createElement('a')
     link.download = `${babyName}_${chartTypeName}_${filterSuffix}_${currentDate}.png`
@@ -803,15 +924,19 @@ const downloadChart = () => {
 const printReport = async () => {
   stampPrintDate()
   await nextTick() // 讓戳記先進 DOM，再開列印對話框
+  renderChartForPrint()
   window.print()
-}
-
-const logout = async () => {
-  try {
-    router.push('/diary')
-  } catch (error) {
-    console.error('登出失敗:', error)
+  // 恢復靠 afterprint（或 matchMedia 備援）；window.print() 在部分瀏覽器不會阻塞，不能在這裡直接恢復。
+  // iOS Safari／PWA 取消列印時兩者都可能不發：回到前景（focus／visibilitychange）時再恢復一次。
+  // restoreChartAfterPrint 有防重入，已經恢復過就什麼都不做。
+  const restoreOnReturn = () => {
+    if (document.visibilityState === 'hidden') return
+    window.removeEventListener('focus', restoreOnReturn)
+    document.removeEventListener('visibilitychange', restoreOnReturn)
+    restoreChartAfterPrint()
   }
+  window.addEventListener('focus', restoreOnReturn)
+  document.addEventListener('visibilitychange', restoreOnReturn)
 }
 
 const reloadData = async () => {
@@ -853,9 +978,16 @@ watch(
 )
 
 // 生命周期
+let stopThemeListener = null
+
 onMounted(async () => {
-  // 使用者也可能直接用瀏覽器列印（Ctrl+P），不經過我們的按鈕
-  window.addEventListener('beforeprint', stampPrintDate)
+  // 使用者也可能直接用瀏覽器列印（Cmd/Ctrl+P），不經過我們的按鈕：
+  // beforeprint 一樣蓋戳記並改用淺色重畫圖表，afterprint 恢復
+  window.addEventListener('beforeprint', renderChartForPrint)
+  window.addEventListener('afterprint', restoreChartAfterPrint)
+  removePrintMediaListener = onMediaQueryChange(printMedia, handlePrintMediaChange)
+  // 主題切換（含系統深淺自動切換）時重畫圖表
+  stopThemeListener = onThemeChange(handleThemeChange)
 
   try {
     // 載入用戶的篩選偏好
@@ -905,116 +1037,175 @@ onMounted(async () => {
   }
 })
 
+onBeforeUnmount(() => {
+  window.removeEventListener('beforeprint', renderChartForPrint)
+  window.removeEventListener('afterprint', restoreChartAfterPrint)
+  removePrintMediaListener()
+  // 列印狀態還沒恢復就離開頁面時，把全域 Chart.defaults 還原成目前主題
+  if (printingInLight) {
+    printingInLight = false
+    applyChartTheme()
+  }
+  stopThemeListener?.()
+  stopThemeListener = null
+})
+
 onUnmounted(() => {
   destroyChart()
-  window.removeEventListener('beforeprint', stampPrintDate)
 })
 </script>
 
 <style scoped>
-/* ── Base ─────────────────────────────────────────── */
+/* 顏色一律用 tokens.css 的語意 token；列印時 tokens.css 會把 token 全部換成淺色值 */
 
-.analysis-container,
-.main-content {
+/* ── Base ─────────────────────────────────────────── */
+.analysis-container {
+  width: 100%;
   min-height: 100vh;
-  background: #0A1020;
-  background-image: radial-gradient(ellipse at 20% 0%, rgba(159,212,212,0.06), transparent 50%);
-  color: #F1EDE0;
-  font-family: -apple-system, 'PingFang TC', 'Helvetica Neue', system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ── Header actions ───────────────────────────────── */
+.header-action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--tap-min);
+  padding: 0 var(--space-3);
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 0.9375rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.header-action:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
+.header-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── 個案選單（頁首下方） ─────────────────────────── */
+.subject-bar {
+  max-width: 1200px;
+  margin: var(--space-4) auto 0;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.subject-label {
+  font-size: 0.875rem;
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+
+.subject-bar select,
+.control-group select {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  min-height: var(--tap-min);
+  font-size: 16px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.subject-bar select {
+  flex: 1;
+  max-width: 420px;
+}
+
+.subject-bar select:hover:not(:disabled),
+.control-group select:hover {
+  border-color: var(--border-strong);
+}
+
+.subject-bar select:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* ── Loading / Error ──────────────────────────────── */
 .loading-container,
 .error-container {
-  min-height: 100vh;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  background: #0A1020; color: #F1EDE0;
-  gap: 12px; text-align: center; padding: 20px;
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+  padding: 20px;
 }
 
 .loading-spinner {
-  width: 40px; height: 40px;
-  border: 2px solid rgba(159,212,212,0.15);
-  border-top-color: #9FD4D4;
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
-.error-icon { font-size: 48px; }
+.error-icon {
+  font-size: 40px;
+  color: var(--text-3);
+}
+
 .loading-container h3,
-.error-container h3 { font-size: 18px; font-weight: 600; color: #F1EDE0; margin: 0; }
+.error-container h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
 .loading-container p,
-.error-container p  { font-size: 13px; color: rgba(241,237,224,0.5); margin: 0; }
+.error-container p {
+  font-size: 13px;
+  color: var(--text-2);
+  margin: 0;
+}
 
 .error-container button {
   margin-top: 8px;
-  padding: 10px 24px;
-  background: rgba(159,212,212,0.1);
-  color: #9FD4D4;
-  border: 1px solid rgba(159,212,212,0.2);
-  border-radius: 10px;
-  font-size: 14px; cursor: pointer; font-family: inherit;
+  min-height: var(--tap-min);
+  padding: 0 24px;
+  background: var(--primary);
+  color: var(--on-primary);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
 }
 
-/* ── Nav header ───────────────────────────────────── */
-.nav-header {
-  background: rgba(10,16,32,0.9);
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
-  border-bottom: 1px solid rgba(241,237,224,0.08);
-  position: sticky; top: 0; z-index: 100;
+.error-container button:hover {
+  background: var(--primary-hover);
 }
-
-.nav-controls {
-  max-width: 1200px; margin: 0 auto;
-  padding: 12px 20px;
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 12px; flex-wrap: wrap;
-}
-
-.nav-left,
-.nav-right {
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-}
-
-.baby-info {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 13px; color: rgba(241,237,224,0.7);
-}
-
-.baby-selector select {
-  background: #1A2340;
-  color: #F1EDE0;
-  border: 1px solid rgba(241,237,224,0.1);
-  border-radius: 8px;
-  padding: 10px 14px;
-  min-height: 44px;
-  font-size: 16px; font-family: inherit;
-  appearance: none; cursor: pointer;
-}
-
-.back-btn {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 8px 14px;
-  min-height: 40px;
-  background: rgba(241,237,224,0.05);
-  color: rgba(241,237,224,0.6);
-  border: 1px solid rgba(241,237,224,0.1);
-  border-radius: 8px;
-  cursor: pointer; font-size: 13px; font-family: inherit;
-  text-decoration: none; white-space: nowrap;
-  transition: background 0.2s, color 0.2s;
-}
-
-.back-btn:hover { background: rgba(241,237,224,0.1); color: #F1EDE0; }
 
 /* ── Stats grid ───────────────────────────────────── */
 .stats-grid {
-  max-width: 1200px; margin: 16px auto 0;
+  max-width: 1200px;
+  margin: 16px auto 0;
   padding: 0 20px;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -1022,167 +1213,268 @@ onUnmounted(() => {
 }
 
 .stat-card {
-  background: #131B33;
-  border: 1px solid rgba(241,237,224,0.08);
-  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-1);
   padding: 16px;
   position: relative;
 }
 
-/* Rating border colours */
-.stat-card.good        { border-left: 3px solid #4CAF8A; }
-.stat-card.acceptable  { border-left: 3px solid #6EA8D4; }
-.stat-card.improvement { border-left: 3px solid #D4B36A; }
+/* 評級邊框：理想＝success、可接受＝中性、需注意＝warning（圖例色塊同色，且一定有文字標籤） */
+.stat-card.good {
+  border-left: 4px solid var(--success);
+}
+.stat-card.acceptable {
+  border-left: 4px solid var(--border-strong);
+}
+.stat-card.improvement {
+  border-left: 4px solid var(--warning);
+}
 
 .stat-value {
-  font-family: inherit;
-  font-size: 26px; font-weight: 500;
-  color: #F1EDE0; letter-spacing: -0.5px; line-height: 1;
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: -0.5px;
+  line-height: 1;
 }
 
 .stat-label {
-  font-size: 13px; color: rgba(241,237,224,0.65);
-  margin-top: 8px; line-height: 1.4;
+  font-size: 13px;
+  color: var(--text-2);
+  margin-top: 8px;
+  line-height: 1.4;
 }
 
 .stat-subtitle {
-  font-size: 11px; color: rgba(241,237,224,0.35);
+  font-size: 11px;
+  color: var(--text-3);
   margin-top: 3px;
-  font-family: inherit;
 }
 
-/* 數值可信度的提醒，不是評級 —— 用暖色與評級邊框區隔 */
+/* 數值可信度的提醒，不是評級：警示底色＋圖示，不單靠顏色 */
 .stat-caveat {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
   margin-top: 8px;
   padding: 6px 8px;
-  font-size: 11px; line-height: 1.5;
-  color: #D4B36A;
-  background: rgba(212,179,106,0.08);
-  border: 1px solid rgba(212,179,106,0.18);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--warning-container);
   border-radius: 6px;
 }
 
-/* 影響多張卡片的資料揭露；配色沿用單張卡片的 .stat-caveat，
-   版面對齊沿用 .legend-container（max-width 1200 + 20px 內距） */
+.notice-icon {
+  flex-shrink: 0;
+  margin-top: 0.2em;
+  font-size: 1.15em;
+}
+
+.stat-caveat .notice-icon,
+.stats-notice.warning .notice-icon {
+  color: var(--warning);
+}
+
+/* 影響多張卡片的資料揭露；版面對齊 .legend-container（max-width 1200 + 20px 內距） */
 .stats-notice {
-  max-width: 1200px; margin: 12px auto 0;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  max-width: 1200px;
+  margin: 12px auto 0;
   padding: 12px 20px;
-  font-size: 12px; line-height: 1.7;
-  color: #D4B36A;
-  background: rgba(212,179,106,0.08);
-  border: 1px solid rgba(212,179,106,0.18);
-  border-radius: 14px;
+  font-size: 12px;
+  line-height: 1.7;
+  border-radius: var(--radius-md);
+}
+
+.stats-notice p {
+  margin: 0;
+}
+
+.stats-notice.warning {
+  color: var(--text);
+  background: var(--warning-container);
+  border: 1px solid var(--warning-container);
+}
+
+/* 已排除期間：中性標記（--surface-2 ＋ 虛線 --border-strong ＋ --text-2） */
+.stats-notice.excluded {
+  color: var(--text-2);
+  background: var(--surface-2);
+  border: 1px dashed var(--border-strong);
 }
 
 /* ── Legend ───────────────────────────────────────── */
 .legend-container {
-  max-width: 1200px; margin: 16px auto 0;
+  max-width: 1200px;
+  margin: 16px auto 0;
   padding: 16px 20px;
-  background: #131B33;
-  border: 1px solid rgba(241,237,224,0.08);
-  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-1);
 }
 
 .legend-container h3 {
-  font-size: 14px; font-weight: 500; color: #F1EDE0; margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 6px;
 }
 
 .legend-intro {
-  font-size: 12px; color: rgba(241,237,224,0.5); margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--text-2);
+  margin-bottom: 12px;
 }
 
-.legend-list { display: flex; flex-direction: column; gap: 8px; }
+.legend-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 
 .legend-entry {
-  display: flex; align-items: center; gap: 10px;
-  font-size: 13px; color: rgba(241,237,224,0.65);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.legend-entry b {
+  color: var(--text);
 }
 
 .color-box {
-  width: 12px; height: 20px; border-radius: 3px; flex-shrink: 0;
+  width: 12px;
+  height: 20px;
+  border-radius: 3px;
+  flex-shrink: 0;
 }
 
-.color-box.good        { background: #4CAF8A; }
-.color-box.acceptable  { background: #6EA8D4; }
-.color-box.improvement { background: #D4B36A; }
-.color-box.default     { background: rgba(241,237,224,0.15); border: 1px solid rgba(241,237,224,0.2); }
+.color-box.good {
+  background: var(--success);
+}
+.color-box.acceptable {
+  background: var(--border-strong);
+}
+.color-box.improvement {
+  background: var(--warning);
+}
+.color-box.default {
+  background: var(--surface-2);
+  border: 1px dashed var(--border-strong);
+}
 
 .legend-source-footer {
   margin-top: 12px;
-  font-size: 10px; color: rgba(241,237,224,0.3);
-  font-family: inherit;
-  border-top: 1px solid rgba(241,237,224,0.06); padding-top: 10px;
+  font-size: 11px;
+  color: var(--text-3);
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
 }
 
 /* ── Daily list ───────────────────────────────────── */
 .daily-list-container {
-  max-width: 1200px; margin: 16px auto 0;
+  max-width: 1200px;
+  margin: 16px auto 0;
   padding: 0 20px;
 }
 
 .daily-list-header {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 10px;
 }
 
 .daily-list-header h3 {
-  font-size: 14px; font-weight: 500; color: #F1EDE0; margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
 }
 
-.daily-filter-info { display: flex; align-items: center; }
+.daily-filter-info {
+  display: flex;
+  align-items: center;
+}
 
 .filter-badge {
-  font-family: inherit;
-  font-size: 10px; color: #9FD4D4;
-  background: rgba(159,212,212,0.08);
-  border: 1px solid rgba(159,212,212,0.15);
-  border-radius: 100px; padding: 3px 10px;
+  font-size: 11px;
+  color: var(--text-2);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 3px 10px;
 }
 
 .daily-sleep-list {
-  background: #131B33;
-  border: 1px solid rgba(241,237,224,0.08);
-  border-radius: 14px; overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
 }
 
 .no-data {
-  padding: 32px; text-align: center;
-  font-size: 13px; color: rgba(241,237,224,0.3);
+  padding: 32px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-3);
 }
 
-table { width: 100%; border-collapse: collapse; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
 table th {
-  background: rgba(241,237,224,0.04);
-  color: rgba(241,237,224,0.5);
-  font-size: 12px; font-weight: 500;
-  font-family: inherit;
-  letter-spacing: 1px; text-align: left;
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-align: left;
   padding: 12px 14px;
-  border-bottom: 1px solid rgba(241,237,224,0.07);
+  border-bottom: 1px solid var(--border);
 }
 
 table td {
   padding: 12px 14px;
-  font-size: 14px; color: rgba(241,237,224,0.75);
-  border-bottom: 1px solid rgba(241,237,224,0.05);
+  font-size: 14px;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
 }
 
-table tr:last-child td { border-bottom: none; }
-table tr:hover td { background: rgba(241,237,224,0.02); }
-.night-sleep { color: #9FD4D4 !important; }
-.day-sleep   { color: #D4B36A  !important; }
+table tr:last-child td {
+  border-bottom: none;
+}
+
+table tr:hover td {
+  background: var(--surface-2);
+}
 
 /* ── Control panel ────────────────────────────────── */
 .control-panel {
-  max-width: 1200px; margin: 16px auto 0;
+  max-width: 1200px;
+  margin: 16px auto 0;
   padding: 16px 20px;
-  background: #131B33;
-  border: 1px solid rgba(241,237,224,0.08);
-  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-1);
 }
 
 .control-panel h3 {
-  font-size: 14px; font-weight: 500; color: #F1EDE0; margin: 0 0 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 14px;
 }
 
 .filter-section {
@@ -1190,179 +1482,216 @@ table tr:hover td { background: rgba(241,237,224,0.02); }
 }
 
 .filter-header {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 0 0 10px;
 }
 
 .filter-header h4 {
-  font-size: 13px; font-weight: 500; color: #F1EDE0; margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
 }
 
 .filter-status .status-text {
-  font-family: inherit;
-  font-size: 11px; color: rgba(241,237,224,0.4);
+  font-size: 12px;
+  color: var(--text-2);
 }
 
 .filter-controls {
-  display: flex; align-items: center; gap: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .quick-buttons {
-  display: flex; gap: 6px; flex-wrap: wrap;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .quick-btn {
-  padding: 10px 18px; border-radius: 100px;
-  min-height: 44px;
-  font-size: 14px; font-family: inherit;
-  cursor: pointer; white-space: nowrap;
+  padding: 10px 18px;
+  border-radius: 100px;
+  min-height: var(--tap-min);
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
   background: transparent;
-  color: rgba(241,237,224,0.45);
-  border: 1px solid rgba(241,237,224,0.1);
-  transition: all 0.15s;
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .quick-btn.active {
-  background: rgba(159,212,212,0.1);
-  border-color: rgba(159,212,212,0.25);
-  color: #9FD4D4;
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
+  font-weight: 600;
 }
 
 .quick-btn:hover:not(.active) {
-  background: rgba(241,237,224,0.05);
-  color: rgba(241,237,224,0.7);
+  background: var(--surface-2);
 }
 
-.reset-btn {
-  padding: 10px 18px; border-radius: 100px;
-  min-height: 44px;
-  font-size: 14px; cursor: pointer; font-family: inherit;
-  background: rgba(212,179,106,0.08);
-  color: rgba(212,179,106,0.7);
-  border: 1px solid rgba(212,179,106,0.15);
-  transition: all 0.15s;
+/* 次要操作：外框 --border-strong ＋ --text */
+.outline-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  min-height: var(--tap-min);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  transition: background 0.15s;
 }
 
-.reset-btn:hover { background: rgba(212,179,106,0.14); color: #D4B36A; }
+.outline-btn:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
+.outline-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 
 .control-row {
-  display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
 }
 
 .control-group {
-  display: flex; flex-direction: column; gap: 6px; min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 160px;
 }
 
 .control-group label {
-  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
-  color: rgba(241,237,224,0.4);
-  font-family: inherit;
-}
-
-.control-group select {
-  background: #1A2340;
-  color: #F1EDE0;
-  border: 1px solid rgba(241,237,224,0.1);
-  border-radius: 8px;
-  padding: 12px 14px; font-size: 16px;
-  min-height: 48px;
-  font-family: inherit; appearance: none; cursor: pointer;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: var(--text-2);
 }
 
 /* ── Chart container ──────────────────────────────── */
 .chart-container {
-  max-width: 1200px; margin: 16px auto 0;
+  max-width: 1200px;
+  margin: 16px auto 0;
   padding: 0 20px 60px;
 }
 
 .chart-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 16px; flex-wrap: wrap; gap: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .chart-title {
-  font-size: 15px; font-weight: 500; color: #F1EDE0; margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
 }
 
-.chart-actions { display: flex; gap: 8px; }
-
-.download-btn,
-.refresh-btn {
-  padding: 10px 16px; border-radius: 8px;
-  min-height: 44px;
-  font-size: 13px; cursor: pointer; font-family: inherit;
-  background: rgba(241,237,224,0.05);
-  color: rgba(241,237,224,0.5);
-  border: 1px solid rgba(241,237,224,0.1);
-  transition: all 0.15s;
+.chart-actions {
+  display: flex;
+  gap: 8px;
 }
 
-.download-btn:hover:not(:disabled),
-.refresh-btn:hover:not(:disabled) {
-  background: rgba(241,237,224,0.1); color: #F1EDE0;
-}
-
-.download-btn:disabled,
-.refresh-btn:disabled {
-  opacity: 0.35; cursor: not-allowed;
-}
-
+/* Chart.js 的 canvas 是透明底，卡片底色由 CSS 給（列印時自動變白） */
 canvas {
   display: block;
-  border-radius: 14px;
-  background: #131B33 !important;
+  border-radius: var(--radius-md);
+  background: var(--surface) !important;
+  border: 1px solid var(--border);
 }
 
 .chart-legend-note {
   margin: 10px 0 0;
-  font-size: 11px; line-height: 1.6;
-  color: rgba(241,237,224,0.4);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-2);
 }
 
 .chart-empty {
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 10px;
   min-height: 280px;
-  background: #131B33;
-  border: 1px solid rgba(241,237,224,0.08);
-  border-radius: 14px;
-  text-align: center; padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  text-align: center;
+  padding: 24px;
 }
 
-.chart-empty-icon { font-size: 36px; opacity: 0.5; }
+.chart-empty-icon {
+  font-size: 32px;
+  color: var(--text-3);
+}
+
 .chart-empty p {
   margin: 0;
-  font-size: 13px; color: rgba(241,237,224,0.4);
-  line-height: 1.6; max-width: 30em;
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.6;
+  max-width: 30em;
 }
 
 /* 非 timeline 圖表固定高度，!important 防止 Chart.js resize loop */
 #durationCanvas,
-#dailyDurationCanvas { height: 800px !important; }
+#dailyDurationCanvas {
+  height: 800px !important;
+}
 #bedtimeCanvas,
 #latencyCanvas,
 #wakeCountCanvas,
-#weeklyCanvas        { height: 400px !important; }
-/* #timelineCanvas 高度由 useChartAnalysis 動態注入 <style> 控制 */
+#weeklyCanvas {
+  height: 400px !important;
+}
+/* #timelineCanvas 高度由 src/lib/charts/timeline.js 動態注入 <style> 控制 */
 
 /* 列印專用表頭：螢幕上不顯示 */
-.print-header { display: none; }
+.print-header {
+  display: none;
+}
 
-/* ── Print ────────────────────────────────────────── */
+/* ── Print ────────────────────────────────────────────
+ * 列印永遠是淺色紙本：tokens.css 在 @media print 已把所有 token 換成淺色值，這裡不寫色碼。
+ * 圖表（canvas）由 printReport / beforeprint 先用淺色圖表主題重畫，不再用 filter: invert。
+ * 螢幕上才有的操作區一律掛 .no-print（main.css）。 */
 @media print {
   .print-header {
     display: block;
     margin: 0 0 16px;
     padding: 0 0 12px;
-    border-bottom: 2px solid #333;
-    color: #111 !important;
+    border-bottom: 2px solid var(--text);
+    color: var(--text);
   }
 
   .print-header h1 {
-    font-size: 18px; font-weight: 600;
-    margin: 0 0 10px; color: #111 !important;
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 10px;
+    color: var(--text);
   }
 
   .print-header dl {
@@ -1372,92 +1701,43 @@ canvas {
     margin: 0;
   }
 
-  .print-header dl > div { display: flex; gap: 8px; font-size: 12px; }
+  .print-header dl > div {
+    display: flex;
+    gap: 8px;
+    font-size: 12px;
+  }
 
   .print-header dt {
-    color: #666 !important;
+    color: var(--text-2);
     min-width: 5em;
   }
 
-  .print-header dd { margin: 0; color: #111 !important; font-weight: 500; }
+  .print-header dd {
+    margin: 0;
+    color: var(--text);
+    font-weight: 500;
+  }
 
   .print-header-note {
     margin: 10px 0 0;
-    font-size: 10px; color: #666 !important;
+    font-size: 10px;
+    color: var(--text-2);
   }
 
-  .analysis-container,
-  .main-content {
-    background: #ffffff !important;
-    color: #111 !important;
-  }
-
-  .nav-header { display: none !important; }
-
-  .stats-grid { page-break-inside: avoid; }
-
-  .stat-card {
-    background: #f8f8f8 !important;
-    border-color: #ddd !important;
-  }
-
-  .stat-value { color: #111 !important; }
-  .stat-label { color: #444 !important; }
-  .stat-subtitle { color: #666 !important; }
-
-  /* 列印時圖例說明會落在白底上，淡色會看不見 */
-  .chart-legend-note { color: #555 !important; }
-
-  /* 列印給醫師看的報告，資料可信度的提醒必須跟著印出來 */
-  .stats-notice,
-  .stat-caveat {
-    color: #8a6d1f !important;
-    background: #fdf6e3 !important;
-    border-color: #d9c48a !important;
-  }
-
+  .stats-grid,
   .legend-container,
-  .daily-list-container,
-  .control-panel { page-break-inside: avoid; }
-
-  .legend-container {
-    background: #f8f8f8 !important;
-    border-color: #ddd !important;
-    color: #333 !important;
+  .daily-list-container {
+    page-break-inside: avoid;
   }
 
-  .legend-entry { color: #333 !important; }
-  .legend-container h3 { color: #111 !important; }
-  .legend-intro { color: #555 !important; }
-
-  .control-panel { display: none !important; }
-
+  .stat-card,
+  .legend-container,
   .daily-sleep-list {
-    background: #f8f8f8 !important;
-    border-color: #ddd !important;
+    box-shadow: none;
   }
-
-  table th {
-    background: #eee !important;
-    color: #333 !important;
-  }
-
-  table td { color: #333 !important; }
 
   canvas {
     page-break-inside: avoid;
-    filter: invert(1) !important;
-    background: #131B33 !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  .chart-actions { display: none !important; }
-
-  .filter-badge {
-    background: #eee !important;
-    color: #555 !important;
-    border-color: #ccc !important;
   }
 }
 
@@ -1467,9 +1747,13 @@ canvas {
     grid-template-columns: 1fr 1fr;
     padding: 0 14px;
   }
-  .nav-controls { padding: 10px 14px; }
-  .control-row { flex-direction: column; }
-  .control-group { min-width: 100%; }
+  .control-row {
+    flex-direction: column;
+  }
+  .control-group {
+    min-width: 100%;
+  }
+  .subject-bar,
   .stats-notice,
   .legend-container,
   .daily-list-container,
@@ -1478,14 +1762,27 @@ canvas {
     padding-left: 14px;
     padding-right: 14px;
   }
-  .quick-buttons { gap: 8px; }
-  .filter-controls { gap: 10px; }
+  .quick-buttons {
+    gap: 8px;
+  }
+  .filter-controls {
+    gap: 10px;
+  }
 }
 
 @media (max-width: 480px) {
-  .stats-grid { grid-template-columns: 1fr; }
-  .stat-value { font-size: 24px; }
-  .back-btn { padding: 8px 12px; font-size: 13px; }
-  .chart-actions { width: 100%; justify-content: flex-end; }
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .stat-value {
+    font-size: 24px;
+  }
+  .header-action {
+    padding: 0 var(--space-2);
+  }
+  .chart-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
 }
 </style>
